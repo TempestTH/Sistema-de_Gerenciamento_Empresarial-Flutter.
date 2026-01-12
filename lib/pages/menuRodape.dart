@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_elifone/pages/HomePage.dart';
+import 'package:projeto_elifone/pages/adicionarEstoque.dart';
+import 'package:projeto_elifone/pages/adicionarMaterial.dart';
 
 class MenuRodape extends StatefulWidget {
   const MenuRodape({super.key});
@@ -13,10 +15,10 @@ class _MenuRodapeState extends State<MenuRodape> {
   bool _expandMaterial = false;
 
   final List<Widget> pages = const [
-    MyHomePage(title: "Home"),
-    Center(child: Text('Entrada Material')),
-    Center(child: Text('Saida Material')),
-    Center(child: Text('Adicionar Material')),
+    MyHomePage(),
+    AdicionarEstoquePage(Entrada: true, Saida: false),
+    AdicionarEstoquePage(Entrada: false, Saida: true),
+    AdicionarMaterialPage()
   ];
 
   @override
@@ -24,10 +26,31 @@ class _MenuRodapeState extends State<MenuRodape> {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Elifone')),
+      appBar: AppBar(
+        title: isMobile
+            ? const SizedBox() // sem título no mobile
+            : const Text('Elifone'),
+
+        // Ícone só no mobile
+        actions: isMobile
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    setState(() => _op = 3);
+                  },
+                ),
+              ]
+            : null,
+      ),
 
       // Drawer no mobile
-      drawer: isMobile ? Drawer(child: _menuContent(isDrawer: true)) : null,
+      drawer: isMobile
+          ? Drawer(
+              width: MediaQuery.of(context).size.width * 0.7,
+              child: _menuContent(isDrawer: true),
+            )
+          : null,
 
       body: Row(
         children: [
@@ -40,10 +63,7 @@ class _MenuRodapeState extends State<MenuRodape> {
             ),
 
           Expanded(
-            child: IndexedStack(
-              index: _op,
-              children: pages,
-            ),
+            child: IndexedStack(index: _op, children: pages),
           ),
         ],
       ),
@@ -56,30 +76,23 @@ class _MenuRodapeState extends State<MenuRodape> {
   Widget _menuContent({required bool isDrawer}) {
     return ListView(
       children: [
-        if (!isDrawer)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Menu',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'Menu',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
+        ),
 
         _menuItem(Icons.home, 'Home', 0, isDrawer),
         _submenuMaterial(isDrawer, "Material"),
 
         // 🔽 SUBMENU
-        
       ],
     );
   }
 
-  Widget _menuItem(
-    IconData icon,
-    String title,
-    int index,
-    bool isDrawer,
-  ) {
+  Widget _menuItem(IconData icon, String title, int index, bool isDrawer) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),

@@ -1,80 +1,152 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/services/supabase_estoque_service.dart';
 import 'package:projeto_elifone/services/supabase_material_service.dart';
+import 'package:projeto_elifone/widgets/estoque_table.dart';
+import 'package:projeto_elifone/widgets/materiais_table.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final SupabaseMaterialService service = SupabaseMaterialService();
-
-  List<dynamic> usuarios = [];
+  final SupabaseMaterialService serviceMaterial = SupabaseMaterialService();
+  final SupabaseEstoqueService serviceEstoque = SupabaseEstoqueService();
+  List<dynamic> materiais = [];
+  List<dynamic> estoque = [];
   bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    carregarUsuarios();
+    carregarMaterial();
+    carregarEstoque();
   }
 
-  Future<void> carregarUsuarios() async {
+  Future<void> carregarMaterial() async {
     try {
-      final data = await service.listar();
-
+      final data = await serviceMaterial.listar();
       setState(() {
-        usuarios = data;
+        materiais = data;
         loading = false;
       });
     } catch (e) {
+      loading = false;
+    }
+  }
+
+  Future<void> carregarEstoque() async {
+    try {
+      final data = await serviceEstoque.listarComMaterial();
       setState(() {
+        estoque = data;
         loading = false;
       });
-      debugPrint('Erro: $e');
+    } catch (e) {
+      loading = false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
+      backgroundColor: const Color.fromARGB(255, 219, 216, 216),
+
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : usuarios.isEmpty
-              ? const Center(child: Text('Nenhum registro encontrado'))
-              : ListView.builder(
-                  itemCount: usuarios.length,
-                  itemBuilder: (context, index) {
-                    final user = usuarios[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(user.id.toString()),
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Card(
+                      color: const Color(0xFF1E1E1E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      title: Text(user.nome ?? 'Sem nome'),
-                    );
-                  },
+                      elevation: 8,
+
+                      child: ExpansionTile(
+                        title: const Text(
+                          "Materiais",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        collapsedIconColor: Colors.white,
+                        iconColor: Colors.white,
+
+                        childrenPadding: const EdgeInsets.all(16),
+
+                        children: [
+                          materiais.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Text(
+                                    "Sem materiais cadastrados.\nCadastre materiais para visualizar aqui.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                )
+                              : MateriaisTable(
+                                  data: materiais,
+                                  onRefresh: carregarMaterial,
+                                ),
+                        ],
+                      ),
+                    ),
+                    Card(
+                      color: const Color(0xFF1E1E1E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 8,
+
+                      child: ExpansionTile(
+                        title: const Text(
+                          "Estoque",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        collapsedIconColor: Colors.white,
+                        iconColor: Colors.white,
+
+                        childrenPadding: const EdgeInsets.all(16),
+
+                        children: [
+                          estoque.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Text(
+                                    "Estoque vazio.\nCadastre materiais no estoque para visualizar aqui.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                )
+                              : EstoqueTable(
+                                  data: estoque,
+                                  onRefresh: carregarEstoque,
+                                ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: carregarUsuarios,
-        tooltip: 'Atualizar',
-        child: const Icon(Icons.refresh),
-      ),
+              ),
+            ),
     );
   }
 }

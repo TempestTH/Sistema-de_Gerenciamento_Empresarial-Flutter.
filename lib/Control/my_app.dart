@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           initialRoute: 'rodape',
           routes: {
-            'HomePage': (context) => MyHomePage(title: 'Elifone: HomePage',),
+            'HomePage': (context) => MyHomePage(),
             'rodape': (context) => MenuRodape()
           },
           localizationsDelegates: [
