@@ -56,10 +56,10 @@ class _EstoqueTableState extends State<EstoqueTable> {
     return Theme(
       data: Theme.of(context).copyWith(
         dataTableTheme: DataTableThemeData(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFF2A2A2A)),
+          headingRowColor: WidgetStateProperty.all(const Color(0xFFB3E5FE)),
           dataRowColor: WidgetStateProperty.all(const Color(0xFF1E1E1E)),
           headingTextStyle: const TextStyle(
-            color: Colors.white,
+            color: Color(0xFF0D47A1),
             fontWeight: FontWeight.bold,
           ),
           dataTextStyle: const TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
@@ -73,11 +73,11 @@ class _EstoqueTableState extends State<EstoqueTable> {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, color: Colors.white),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFF0D47A1)),
                     hintText: "Pesquisar material...",
-                    hintStyle: const TextStyle(color: Colors.white54),
+                    hintStyle: const TextStyle(color: Color(0xFF0D47A1)),
                     filled: true,
-                    fillColor: const Color(0xFF121212),
+                    fillColor: const Color(0xFFE1F5FE),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -88,10 +88,10 @@ class _EstoqueTableState extends State<EstoqueTable> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.refresh, color: Colors.white),
+                icon: const Icon(Icons.refresh, color: Color(0xFF0D47A1)),
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all(
-                    const Color(0xFF121212),
+                    const Color(0xFFE1F5FE),
                   ),
                 ),
                 onPressed: () async {

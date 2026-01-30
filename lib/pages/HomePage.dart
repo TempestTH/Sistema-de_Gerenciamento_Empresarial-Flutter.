@@ -52,7 +52,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 219, 216, 216),
+      backgroundColor: const Color(0xFFE1F5FE),
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
@@ -62,85 +62,100 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Column(
                   children: [
                     Card(
-                      color: const Color(0xFF1E1E1E),
+                      clipBehavior: Clip.antiAlias,
+                      color: const Color(0xFF01579B),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
 
-                      child: ExpansionTile(
-                        title: const Text(
-                          "Materiais",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          hoverColor: Color(0xFF0277BD),
+                          dividerColor:
+                              Colors.transparent, // 🚫 remove as linhas
                         ),
-                        collapsedIconColor: Colors.white,
-                        iconColor: Colors.white,
+                        child: ExpansionTile(
+                          title: const Text(
+                            "Materiais",
+                            style: TextStyle(
+                              color: Color(0xFFE1F5FE),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          collapsedIconColor: Colors.white,
+                          iconColor: Colors.white,
 
-                        childrenPadding: const EdgeInsets.all(16),
+                          childrenPadding: const EdgeInsets.all(16),
 
-                        children: [
-                          materiais.isEmpty
-                              ? const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Text(
-                                    "Sem materiais cadastrados.\nCadastre materiais para visualizar aqui.",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                          children: [
+                            materiais.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Text(
+                                      "Sem materiais cadastrados.\nCadastre materiais para visualizar aqui.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
                                     ),
+                                  )
+                                : MateriaisTable(
+                                    data: materiais,
+                                    onRefresh: carregarMaterial,
                                   ),
-                                )
-                              : MateriaisTable(
-                                  data: materiais,
-                                  onRefresh: carregarMaterial,
-                                ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     Card(
-                      color: const Color(0xFF1E1E1E),
+                      color: const Color(0xFF01579B),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-
-                      child: ExpansionTile(
-                        title: const Text(
-                          "Estoque",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          hoverColor: Color(0xFF0277BD),
+                          dividerColor:
+                              Colors.transparent, // 🚫 remove as linhas
                         ),
-                        collapsedIconColor: Colors.white,
-                        iconColor: Colors.white,
+                        child: ExpansionTile(
+                          title: const Text(
+                            "Estoque",
+                            style: TextStyle(
+                              color: Color(0xFFE1F5FE),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          collapsedIconColor: Colors.white,
+                          iconColor: Colors.white,
 
-                        childrenPadding: const EdgeInsets.all(16),
+                          childrenPadding: const EdgeInsets.all(16),
 
-                        children: [
-                          estoque.isEmpty
-                              ? const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Text(
-                                    "Estoque vazio.\nCadastre materiais no estoque para visualizar aqui.",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
+                          children: [
+                            estoque.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: Text(
+                                      "Estoque vazio.\nCadastre materiais no estoque para visualizar aqui.",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
                                     ),
+                                  )
+                                : EstoqueTable(
+                                    data: estoque,
+                                    onRefresh: carregarEstoque,
                                   ),
-                                )
-                              : EstoqueTable(
-                                  data: estoque,
-                                  onRefresh: carregarEstoque,
-                                ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],

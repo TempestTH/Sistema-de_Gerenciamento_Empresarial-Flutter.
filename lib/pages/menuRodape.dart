@@ -13,12 +13,17 @@ class MenuRodape extends StatefulWidget {
 class _MenuRodapeState extends State<MenuRodape> {
   int _op = 0;
   bool _expandMaterial = false;
-
+  final List<String> pageTitles = [
+    'Home',
+    'Entrada de Material',
+    'Saída de Material',
+    'Adicionar Material',
+  ];
   final List<Widget> pages = const [
     MyHomePage(),
     AdicionarEstoquePage(Entrada: true, Saida: false),
     AdicionarEstoquePage(Entrada: false, Saida: true),
-    AdicionarMaterialPage()
+    AdicionarMaterialPage(),
   ];
 
   @override
@@ -26,23 +31,26 @@ class _MenuRodapeState extends State<MenuRodape> {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
-      appBar: AppBar(
-        title: isMobile
-            ? const SizedBox() // sem título no mobile
-            : const Text('Elifone'),
+      appBar: !isMobile
+          ? null
+          : AppBar(
+              backgroundColor: Color(0xFFB3E5FC),
+              title: isMobile
+                  ? Text(pageTitles[_op]) // sem título no mobile
+                  : const SizedBox(),
 
-        // Ícone só no mobile
-        actions: isMobile
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    setState(() => _op = 3);
-                  },
-                ),
-              ]
-            : null,
-      ),
+              // Ícone só no mobile
+              actions: isMobile
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () {
+                          setState(() => _op = 3);
+                        },
+                      ),
+                    ]
+                  : null,
+            ),
 
       // Drawer no mobile
       drawer: isMobile
@@ -58,12 +66,41 @@ class _MenuRodapeState extends State<MenuRodape> {
           if (!isMobile)
             Container(
               width: 260,
-              color: Colors.grey.shade100,
+              color: Colors.lightBlue[200],
               child: _menuContent(isDrawer: false),
             ),
 
           Expanded(
-            child: IndexedStack(index: _op, children: pages),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // TÍTULO DA PÁGINA
+                isMobile
+                    ? SizedBox()
+                    : Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 20,
+                        ),
+                        color: const Color(0xFFB3E5FC), // mesma cor da AppBar
+                        child: Text(
+                          pageTitles[_op],
+                          style: const TextStyle(
+                            fontSize: 24,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+
+                const Divider(height: 1),
+
+                // CONTEÚDO DA PÁGINA
+                Expanded(
+                  child: IndexedStack(index: _op, children: pages),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -79,7 +116,7 @@ class _MenuRodapeState extends State<MenuRodape> {
         const Padding(
           padding: EdgeInsets.all(16),
           child: Text(
-            'Menu',
+            'Elifone',
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ),
@@ -93,43 +130,117 @@ class _MenuRodapeState extends State<MenuRodape> {
   }
 
   Widget _menuItem(IconData icon, String title, int index, bool isDrawer) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      selected: _op == index,
-      onTap: () {
-        setState(() => _op = index);
-        if (isDrawer) Navigator.pop(context);
-      },
+    final bool selecionado = _op == index;
+    return _menuWrapper(
+      child: Container(
+        decoration: BoxDecoration(
+          color: selecionado
+              ? const Color(0xFFB3E5FC) // cor quando selecionado
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          leading: Icon(
+            icon,
+            color: selecionado ? const Color(0xFF0D47A1) : null,
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: selecionado ? const Color(0xFF0D47A1) : null,
+              fontWeight: selecionado ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          onTap: () {
+            setState(() => _op = index);
+            if (isDrawer) Navigator.pop(context);
+          },
+        ),
+      ),
     );
   }
 
   Widget _submenuMaterial(bool isDrawer, String text) {
-    return ExpansionTile(
-      leading: const Icon(Icons.settings),
-      title: Text(text),
-      initiallyExpanded: _expandMaterial,
-      onExpansionChanged: (value) {
-        setState(() => _expandMaterial = value);
-      },
-      children: [
-        _submenuItem('Entrada', 1, isDrawer, Icons.input),
-        _submenuItem('Saida', 2, isDrawer, Icons.output),
-        _submenuItem('Adicionar', 3, isDrawer, Icons.add),
-      ],
+    final bool materialSelecionado = (_op == 1 || _op == 2 || _op == 3);
+    final bool destacarMaterial = materialSelecionado && !_expandMaterial;
+    return _menuWrapper(
+      child: Container(
+        decoration: BoxDecoration(
+          color: destacarMaterial
+              ? const Color(0xFFB3E5FC)
+              : Colors.transparent,
+          border: Border.all(
+            color: _expandMaterial
+                ? const Color(0xFF0D47A1)
+                : Colors.transparent,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(
+            dividerColor: Colors.transparent, // 🚫 remove as linhas
+          ),
+          child: ExpansionTile(
+            backgroundColor: Colors.transparent,
+            collapsedBackgroundColor: Colors.transparent,
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+            childrenPadding: const EdgeInsets.only(bottom: 8),
+            leading: Icon(
+              Icons.settings,
+              color: _expandMaterial ? const Color(0xFF0D47A1) : null,
+            ),
+            title: Text(text),
+            initiallyExpanded: _expandMaterial,
+            onExpansionChanged: (value) {
+              setState(() => _expandMaterial = value);
+            },
+            children: [
+              _submenuItem('Entrada', 1, isDrawer, Icons.input),
+              _submenuItem('Saida', 2, isDrawer, Icons.output),
+              _submenuItem('Adicionar', 3, isDrawer, Icons.add),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _submenuItem(String title, int index, bool isDrawer, IconData icon) {
-    return ListTile(
-      leading: Icon(icon),
-      contentPadding: const EdgeInsets.only(left: 72),
-      title: Text(title),
-      selected: _op == index,
-      onTap: () {
-        setState(() => _op = index);
-        if (isDrawer) Navigator.pop(context);
-      },
+    final bool selecionado = _op == index;
+    return _menuWrapper(
+      child: Container(
+        decoration: BoxDecoration(
+          color: selecionado
+              ? const Color(0xFFB3E5FC) // cor quando selecionado
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.only(left: 32),
+          leading: Icon(
+            icon,
+            color: selecionado ? const Color(0xFF0D47A1) : null,
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: selecionado ? const Color(0xFF0D47A1) : null,
+              fontWeight: selecionado ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+          onTap: () {
+            setState(() => _op = index);
+            if (isDrawer) Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _menuWrapper({required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: ClipRRect(borderRadius: BorderRadius.circular(12), child: child),
     );
   }
 }

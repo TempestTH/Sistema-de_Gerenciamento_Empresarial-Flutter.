@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/Control/route_observer.dart';
 import 'package:projeto_elifone/model/estoque_model.dart';
 import 'package:projeto_elifone/services/supabase_material_service.dart';
 import 'package:projeto_elifone/services/supabase_estoque_service.dart';
+import 'package:projeto_elifone/widgets/modal_quantidade_material.dart';
 
 class AdicionarEstoquePage extends StatefulWidget {
   final bool Entrada;
   final bool Saida;
+
   const AdicionarEstoquePage({
     super.key,
     required this.Entrada,
@@ -16,16 +19,18 @@ class AdicionarEstoquePage extends StatefulWidget {
   State<AdicionarEstoquePage> createState() => _AdicionarEstoquePageState();
 }
 
-class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
+class _AdicionarEstoquePageState extends State<AdicionarEstoquePage>
+    with RouteAware {
   final SupabaseMaterialService materialService = SupabaseMaterialService();
   final SupabaseEstoqueService estoqueService = SupabaseEstoqueService();
 
   List<dynamic> materiais = [];
   List<dynamic> materiaisFiltrados = [];
+  List<dynamic> materiaisSelecionados = [];
 
-  dynamic materialSelecionado;
+  Map<int, TextEditingController> quantidadesPorMaterial = {};
+
   final TextEditingController buscaController = TextEditingController();
-  final TextEditingController quantidadeController = TextEditingController();
 
   bool loading = true;
   bool salvando = false;
@@ -36,165 +41,174 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
     carregarMateriais();
   }
 
-  Future<void> carregarMateriais() async {
-    try {
-      final data = await materialService.listar();
-      setState(() {
-        materiais = data;
-        materiaisFiltrados = data;
-        loading = false;
-      });
-    } catch (e) {
-      loading = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  // 🔥 SEMPRE que voltar para esta tela
+  @override
+  void didPopNext() {
+    carregarMateriais();
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    buscaController.dispose();
+    for (final controller in quantidadesPorMaterial.values) {
+      controller.dispose();
     }
+    super.dispose();
+  }
+
+  Future<void> carregarMateriais() async {
+    final data = await materialService.listar();
+    setState(() {
+      materiais = data;
+      materiaisFiltrados = data;
+      loading = false;
+    });
   }
 
   void filtrarMateriais(String value) {
     setState(() {
       materiaisFiltrados = materiais.where((m) {
-        final nome = m.nome.toString().toLowerCase();
-        return nome.contains(value.toLowerCase());
+        return m.nome.toLowerCase().contains(value.toLowerCase());
       }).toList();
     });
   }
 
-  Future<void> salvar() async {
-    if (materialSelecionado == null) return;
-    if (quantidadeController.text.isEmpty) return;
+  void toggleMaterial(dynamic material) {
+    setState(() {
+      if (materiaisSelecionados.contains(material)) {
+        materiaisSelecionados.remove(material);
+        quantidadesPorMaterial.remove(material.id);
+      } else {
+        materiaisSelecionados.add(material);
+        quantidadesPorMaterial[material.id] = TextEditingController();
+      }
+    });
+  }
 
+  void abrirModalConfirmacao() {
+    if (materiaisSelecionados.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ModalQuantidadeMaterial(
+        materiaisSelecionados: materiaisSelecionados,
+        controllers: quantidadesPorMaterial,
+        carregando: salvando,
+        onConfirmar: confirmarAlteracoes,
+      ),
+    );
+  }
+
+  Future<void> confirmarAlteracoes() async {
     setState(() => salvando = true);
 
-    final int materialId = materialSelecionado.id;
-    final int quantidade = int.parse(quantidadeController.text);
-
     try {
-      // 1️⃣ Inserir no estoque
-      await estoqueService.inserir(
-        EstoqueModel(
-          idMaterial: materialId,
-          quantidade: quantidade,
-          entrada: widget.Entrada,
-          saida: widget.Saida,
-          createdAt: DateTime.now(),
-        ),
-      );
+      for (var material in materiaisSelecionados) {
+        final controller = quantidadesPorMaterial[material.id]!;
+        if (controller.text.isEmpty) continue;
 
-      // 2️⃣ Atualizar quantidade do material
-      final int novoTotal;
-      final int quantidadeAtual = materialSelecionado.quantidade ?? 0;
-      if (widget.Entrada) {
-        novoTotal = quantidadeAtual + quantidade;
-      } else {
-        novoTotal = quantidadeAtual - quantidade;
+        final int quantidade = int.parse(controller.text);
+        final int quantidadeAtual = material.quantidade ?? 0;
+
+        await estoqueService.inserir(
+          EstoqueModel(
+            idMaterial: material.id,
+            quantidade: quantidade,
+            entrada: widget.Entrada,
+            saida: widget.Saida,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+        final int novoTotal = widget.Entrada
+            ? quantidadeAtual + quantidade
+            : quantidadeAtual - quantidade;
+
+        await materialService.atualizarQuantidade(material.id, novoTotal);
       }
-      await materialService.atualizarQuantidade(
-        materialId,
-        novoTotal, // ✅ CORRETO
-      );
-      // Mostra a mensagem de sucesso
+
+      Navigator.pop(context);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             widget.Entrada
-                ? "Entrada adicionada com sucesso!"
-                : "Saída adicionada com sucesso!",
+                ? "Entradas adicionadas com sucesso!"
+                : "Saídas adicionadas com sucesso!",
           ),
-          duration: const Duration(seconds: 2),
         ),
       );
 
-      // Limpa os campos
-      quantidadeController.clear();
-      setState(() {
-        materialSelecionado = null;
-      });
+      materiaisSelecionados.clear();
+      quantidadesPorMaterial.clear();
 
-      // Recarrega a lista de materiais
       carregarMateriais();
-      salvando = false;
-    } catch (e) {
+    } finally {
       setState(() => salvando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro inesperado'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Adicionar ao Estoque")),
+      backgroundColor: const Color(0xFFE1F5FE),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Pesquisar Material"),
                   TextField(
-                    controller: buscaController,
                     onChanged: filtrarMateriais,
                     decoration: const InputDecoration(
-                      hintText: "Digite o nome do material...",
+                      prefixIcon: Icon(Icons.search),
+                      hintText: "Pesquisar material...",
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   Expanded(
-                    child: materiaisFiltrados.isEmpty
-                        ? const Center(
-                            child: Text("Nenhum material encontrado"),
-                          )
-                        : ListView.builder(
-                            itemCount: materiaisFiltrados.length,
-                            itemBuilder: (context, index) {
-                              final item = materiaisFiltrados[index];
-                              return ListTile(
-                                title: Text(item.nome),
-                                selectedTileColor: Colors.grey.shade300,
-                                subtitle: Text(
-                                  "Quantidade atual: ${item.quantidade ?? 0}",
-                                ),
-                                selected: materialSelecionado?.id == item.id,
-                                onTap: () {
-                                  setState(() {
-                                    materialSelecionado = item;
-                                  });
-                                },
-                              );
-                            },
-                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF01579B),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ListView.builder(
+                        itemCount: materiaisFiltrados.length,
+                        itemBuilder: (_, index) {
+                          final material = materiaisFiltrados[index];
+                          final selecionado = materiaisSelecionados.contains(
+                            material,
+                          );
+
+                          return CheckboxListTile(
+                            value: selecionado,
+                            onChanged: (_) => toggleMaterial(material),
+                            title: Text(
+                              material.nome,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            controlAffinity: ListTileControlAffinity.trailing,
+                          );
+                        },
+                      ),
+                    ),
                   ),
-
-                  const SizedBox(height: 10),
-                  const Text("Quantidade a adicionar"),
-                  TextField(
-                    controller: quantidadeController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(hintText: "Ex: 10"),
-                  ),
-
-                  const SizedBox(height: 20),
-
+                  const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: salvando ? null : salvar,
-                      child: salvando
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white, // deixa visível no botão
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Text("Salvar"),
+                      onPressed: materiaisSelecionados.isEmpty || salvando
+                          ? null
+                          : abrirModalConfirmacao,
+                      child: const Text("Adicionar"),
                     ),
                   ),
                 ],
