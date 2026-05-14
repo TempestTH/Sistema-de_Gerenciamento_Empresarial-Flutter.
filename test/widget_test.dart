@@ -1,30 +1,56 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:projeto_elifone/Control/my_app.dart';
+import 'package:projeto_elifone/model/material_model.dart';
+import 'package:projeto_elifone/pages/HomePage.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(MyApp());
+  testWidgets('dashboard renders dynamic inventory data', (tester) async {
+    final now = DateTime.now();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyHomePage(
+          loadMateriais: () async => [
+            MaterialModel(
+              nome: 'Cabo UTP',
+              quantidade: 8,
+              valor: 12,
+              metro: true,
+            ),
+            MaterialModel(
+              nome: 'Conector RJ45',
+              quantidade: 35,
+              valor: 1.5,
+              metro: false,
+            ),
+          ],
+          loadEstoque: () async => [
+            {
+              'created_at': now.toIso8601String(),
+              'Quantidade': 10,
+              'Entrada': true,
+              'Saida': false,
+              'Material': {'nome': 'Cabo UTP'},
+            },
+            {
+              'created_at': now.toIso8601String(),
+              'Quantidade': 2,
+              'Entrada': false,
+              'Saida': true,
+              'Material': {'nome': 'Conector RJ45'},
+            },
+          ],
+        ),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Visao Geral do Sistema'), findsOneWidget);
+    expect(find.text('43'), findsOneWidget);
+    expect(find.text('Cabo UTP'), findsWidgets);
+    expect(find.text('Conector RJ45'), findsWidgets);
+    expect(find.text('Entrada'), findsWidgets);
+    expect(find.text('Saida'), findsWidgets);
   });
 }
