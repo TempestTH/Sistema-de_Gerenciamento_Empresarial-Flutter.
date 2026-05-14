@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:projeto_elifone/model/agendamento_anexo_model.dart';
 import 'package:projeto_elifone/model/agendamento_historico_model.dart';
 import 'package:projeto_elifone/model/agendamento_item_model.dart';
@@ -44,12 +45,28 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
   List<MaterialModel> materiais = [];
   bool loading = true;
   bool salvando = false;
+  late String statusSalvo;
 
   @override
   void initState() {
     super.initState();
     agendamento = widget.agendamento;
+    statusSalvo = agendamento.status;
     descricaoController.text = agendamento.observacao ?? '';
+    carregarDetalhes();
+  }
+
+  @override
+  void didUpdateWidget(covariant DetalhesServicoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.agendamento.id == widget.agendamento.id) return;
+
+    agendamento = widget.agendamento;
+    statusSalvo = agendamento.status;
+    descricaoController.text = agendamento.observacao ?? '';
+    itens = [];
+    anexos = [];
+    historico = [];
     carregarDetalhes();
   }
 
@@ -62,38 +79,43 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
   Future<void> carregarDetalhes() async {
     setState(() => loading = true);
 
+    final id = agendamento.id;
+    var agendamentoData = agendamento;
+    var materialData = <MaterialModel>[];
+    var itensData = <AgendamentoItemModel>[];
+    var anexosData = <AgendamentoAnexoModel>[];
+    var historicoData = <AgendamentoHistoricoModel>[];
+
     try {
-      final id = agendamento.id;
-      final materialData = await materialService.listar();
-      if (id == null) {
-        throw Exception('Agendamento local');
-      }
+      materialData = await materialService.listar();
+    } catch (_) {}
 
-      final agendamentoData = await agendamentoService.buscarPorId(id);
-      final itensData = await agendamentoService.listarItens(id);
-      final anexosData = await agendamentoService.listarAnexos(id);
-      final historicoData = await agendamentoService.listarHistorico(id);
-
-      if (!mounted) return;
-      setState(() {
-        agendamento = agendamentoData;
-        descricaoController.text = agendamentoData.observacao ?? '';
-        materiais = materialData;
-        itens = itensData;
-        anexos = anexosData;
-        historico = historicoData;
-        loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        materiais = [];
-        itens = [];
-        anexos = [];
-        historico = [];
-        loading = false;
-      });
+    if (id != null) {
+      try {
+        agendamentoData = await agendamentoService.buscarPorId(id);
+      } catch (_) {}
+      try {
+        itensData = await agendamentoService.listarItens(id);
+      } catch (_) {}
+      try {
+        anexosData = await agendamentoService.listarAnexos(id);
+      } catch (_) {}
+      try {
+        historicoData = await agendamentoService.listarHistorico(id);
+      } catch (_) {}
     }
+
+    if (!mounted) return;
+    setState(() {
+      agendamento = agendamentoData;
+      statusSalvo = agendamentoData.status;
+      descricaoController.text = agendamentoData.observacao ?? '';
+      materiais = materialData;
+      itens = itensData;
+      anexos = anexosData;
+      historico = historicoData;
+      loading = false;
+    });
   }
 
   Future<void> salvarAlteracoes({bool concluir = false}) async {
@@ -117,14 +139,14 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
       if (agendamento.id != null) {
         await agendamentoService.atualizar(atualizado, agendamento.id!);
 
-        if (concluir) {
+        if (concluir && statusSalvo != 'Concluido') {
           await _registrarSaidasDeMateriais();
-          await agendamentoService.inserirHistorico(
-            AgendamentoHistoricoModel(
-              idAgendamento: agendamento.id,
-              titulo: 'Servico concluido',
-              descricao: 'Status alterado automaticamente para concluido.',
-            ),
+        }
+
+        if (statusSalvo != novoStatus) {
+          await _registrarHistorico(
+            'Status alterado',
+            'Status alterado de $statusSalvo para $novoStatus.',
           );
         }
       }
@@ -132,6 +154,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
       if (!mounted) return;
       setState(() {
         agendamento = atualizado;
+        statusSalvo = novoStatus;
         salvando = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -194,12 +217,42 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
     try {
       if (agendamento.id != null) {
         await agendamentoService.inserirItem(itemComServico);
-        await carregarDetalhes();
+        final itensAtualizados = await agendamentoService.listarItens(
+          agendamento.id!,
+        );
+        final agendamentoAtualizado = _copiarAgendamento(
+          valor: _calcularTotal(itensAtualizados, agendamento.valor),
+        );
+        await agendamentoService.atualizar(
+          agendamentoAtualizado,
+          agendamento.id!,
+        );
+        await _registrarHistorico(
+          'Item adicionado',
+          '${itemComServico.descricao} foi adicionado a ordem de servico.',
+        );
+        if (!mounted) return;
+        setState(() {
+          itens = itensAtualizados;
+          agendamento = agendamentoAtualizado;
+        });
       } else {
-        setState(() => itens = [...itens, itemComServico]);
+        final itensAtualizados = [...itens, itemComServico];
+        setState(() {
+          itens = itensAtualizados;
+          agendamento = _copiarAgendamento(
+            valor: _calcularTotal(itensAtualizados, agendamento.valor),
+          );
+        });
       }
     } catch (_) {
-      setState(() => itens = [...itens, itemComServico]);
+      final itensAtualizados = [...itens, itemComServico];
+      setState(() {
+        itens = itensAtualizados;
+        agendamento = _copiarAgendamento(
+          valor: _calcularTotal(itensAtualizados, agendamento.valor),
+        );
+      });
     }
   }
 
@@ -207,26 +260,69 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
     try {
       if (item.id != null) {
         await agendamentoService.deletarItem(item.id!);
-        await carregarDetalhes();
+        final itensAtualizados = await agendamentoService.listarItens(
+          agendamento.id!,
+        );
+        final agendamentoAtualizado = _copiarAgendamento(
+          valor: _calcularTotal(itensAtualizados, 0),
+        );
+        await agendamentoService.atualizar(
+          agendamentoAtualizado,
+          agendamento.id!,
+        );
+        await _registrarHistorico(
+          'Item removido',
+          '${item.descricao} foi removido da ordem de servico.',
+        );
+        if (!mounted) return;
+        setState(() {
+          itens = itensAtualizados;
+          agendamento = agendamentoAtualizado;
+        });
       } else {
-        setState(() => itens = itens.where((value) => value != item).toList());
+        final itensAtualizados = itens.where((value) => value != item).toList();
+        setState(() {
+          itens = itensAtualizados;
+          agendamento = _copiarAgendamento(
+            valor: _calcularTotal(itensAtualizados, 0),
+          );
+        });
       }
     } catch (_) {
-      setState(() => itens = itens.where((value) => value != item).toList());
+      final itensAtualizados = itens.where((value) => value != item).toList();
+      setState(() {
+        itens = itensAtualizados;
+        agendamento = _copiarAgendamento(
+          valor: _calcularTotal(itensAtualizados, 0),
+        );
+      });
     }
   }
 
-  Future<void> _adicionarAnexo(String tipo) async {
+  Future<void> _adicionarAnexoArquivo() async {
+    final selecionado = await FilePicker.pickFiles(
+      allowMultiple: false,
+      type: FileType.any,
+      withData: false,
+    );
+
+    final arquivo = selecionado?.files.single;
+    if (arquivo == null) return;
+
     final anexo = AgendamentoAnexoModel(
       idAgendamento: agendamento.id,
-      nome: tipo == 'foto' ? 'foto_servico.jpg' : 'os_assinada.pdf',
-      tipo: tipo,
-      caminho: tipo == 'foto' ? 'camera/local' : 'arquivo/local',
+      nome: arquivo.name,
+      tipo: 'arquivo',
+      caminho: arquivo.path ?? arquivo.name,
     );
 
     try {
       if (agendamento.id != null) {
         await agendamentoService.inserirAnexo(anexo);
+        await _registrarHistorico(
+          'Arquivo anexado',
+          '${arquivo.name} foi anexado a ordem de servico.',
+        );
         await carregarDetalhes();
       } else {
         setState(() => anexos = [anexo, ...anexos]);
@@ -254,6 +350,54 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
   num get _valorTotal {
     if (itens.isEmpty) return agendamento.valor;
     return itens.fold<num>(0, (total, item) => total + item.total);
+  }
+
+  num _calcularTotal(List<AgendamentoItemModel> itensBase, num valorPadrao) {
+    if (itensBase.isEmpty) return valorPadrao;
+    return itensBase.fold<num>(0, (total, item) => total + item.total);
+  }
+
+  AgendamentoModel _copiarAgendamento({
+    String? status,
+    num? valor,
+    String? observacao,
+  }) {
+    return AgendamentoModel(
+      id: agendamento.id,
+      createdAt: agendamento.createdAt,
+      cliente: agendamento.cliente,
+      servico: agendamento.servico,
+      responsavel: agendamento.responsavel,
+      inicio: agendamento.inicio,
+      fim: agendamento.fim,
+      status: status ?? agendamento.status,
+      valor: valor ?? agendamento.valor,
+      observacao: observacao ?? agendamento.observacao,
+    );
+  }
+
+  Future<AgendamentoHistoricoModel?> _registrarHistorico(
+    String titulo,
+    String descricao,
+  ) async {
+    final registro = AgendamentoHistoricoModel(
+      createdAt: DateTime.now(),
+      idAgendamento: agendamento.id,
+      titulo: titulo,
+      descricao: descricao,
+    );
+
+    try {
+      if (agendamento.id != null) {
+        await agendamentoService.inserirHistorico(registro);
+      }
+      if (mounted) {
+        setState(() => historico = [registro, ...historico]);
+      }
+      return registro;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -520,12 +664,12 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
                       runSpacing: 8,
                       children: [
                         OutlinedButton.icon(
-                          onPressed: () => _adicionarAnexo('arquivo'),
+                          onPressed: _adicionarAnexoArquivo,
                           icon: const Icon(Icons.attach_file, size: 18),
                           label: const Text('Arquivo'),
                         ),
                         OutlinedButton.icon(
-                          onPressed: () => _adicionarAnexo('foto'),
+                          onPressed: null,
                           icon: const Icon(Icons.photo_camera, size: 18),
                           label: const Text('Foto'),
                         ),
@@ -705,18 +849,21 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
     final descricao = usarMaterial
         ? materialSelecionado?.nome ?? ''
         : descricaoController.text;
+    final quantidade =
+        num.tryParse(quantidadeController.text.replaceAll(',', '.')) ?? 1;
+    final valorUnitario = usarMaterial
+        ? materialSelecionado?.valor ?? 0
+        : num.tryParse(valorController.text.replaceAll(',', '.')) ?? 0;
 
-    if (descricao.isEmpty) return;
+    if (descricao.isEmpty || quantidade <= 0) return;
 
     Navigator.pop(
       context,
       AgendamentoItemModel(
-        idMaterial: materialSelecionado?.id,
+        idMaterial: usarMaterial ? materialSelecionado?.id : null,
         descricao: descricao,
-        quantidade:
-            num.tryParse(quantidadeController.text.replaceAll(',', '.')) ?? 1,
-        valorUnitario:
-            num.tryParse(valorController.text.replaceAll(',', '.')) ?? 0,
+        quantidade: quantidade,
+        valorUnitario: valorUnitario,
         material: usarMaterial,
       ),
     );
@@ -764,56 +911,118 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
                     CheckboxListTile(
                       value: usarMaterial,
                       onChanged: (value) {
-                        setState(() => usarMaterial = value ?? false);
+                        setState(() {
+                          usarMaterial = value ?? false;
+                          if (!usarMaterial) {
+                            materialSelecionado = null;
+                            valorController.text = '0';
+                          }
+                        });
                       },
                       title: const Text('Este item e material do estoque'),
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                     const SizedBox(height: 12),
-                    if (usarMaterial)
+                    if (usarMaterial) ...[
+                      _sectionLabel('Material do estoque'),
+                      const SizedBox(height: 8),
                       DropdownButtonFormField<MaterialModel>(
                         initialValue: materialSelecionado,
-                        decoration: _fieldDecoration('Material'),
+                        decoration: _fieldDecoration('Selecione o material'),
                         items: widget.materiais
                             .map(
                               (material) => DropdownMenuItem(
                                 value: material,
-                                child: Text(material.nome),
+                                child: Text(
+                                  '${material.nome} - ${_formatCurrency(material.valor)}',
+                                ),
                               ),
                             )
                             .toList(),
                         onChanged: (value) {
                           setState(() {
                             materialSelecionado = value;
-                            valorController.text =
-                                value?.valor.toString() ?? valorController.text;
                           });
                         },
-                      )
-                    else
+                      ),
+                      if (materialSelecionado != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Preco unitario: ${_formatCurrency(materialSelecionado!.valor)}',
+                            style: const TextStyle(
+                              color: Color(0xFF374151),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ] else ...[
+                      _sectionLabel('Descricao do item'),
+                      const SizedBox(height: 8),
                       TextField(
                         controller: descricaoController,
                         decoration: _fieldDecoration('Descricao'),
                       ),
+                    ],
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: quantidadeController,
-                            keyboardType: TextInputType.number,
-                            decoration: _fieldDecoration('Quantidade'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextField(
-                            controller: valorController,
-                            keyboardType: TextInputType.number,
-                            decoration: _fieldDecoration('Valor unitario'),
-                          ),
-                        ),
-                      ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compacto = constraints.maxWidth < 420;
+                        final quantidadeField = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _sectionLabel('Quantidade'),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: quantidadeController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: _fieldDecoration('Ex: 1'),
+                            ),
+                          ],
+                        );
+
+                        if (usarMaterial) return quantidadeField;
+
+                        final valorField = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _sectionLabel('Valor unitario'),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: valorController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: _fieldDecoration('Ex: 85,00'),
+                            ),
+                          ],
+                        );
+
+                        if (compacto) {
+                          return Column(
+                            children: [
+                              quantidadeField,
+                              const SizedBox(height: 12),
+                              valorField,
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: quantidadeField),
+                            const SizedBox(width: 10),
+                            Expanded(child: valorField),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),

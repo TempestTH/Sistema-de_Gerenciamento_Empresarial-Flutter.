@@ -343,46 +343,60 @@ class _MyHomePageState extends State<MyHomePage> {
       icon: Icons.history,
       child: atividadesRecentes.isEmpty
           ? const _EmptyState(message: 'Nenhuma movimentacao registrada.')
-          : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor: WidgetStateProperty.all(
-                  const Color(0xFFF3F4F6),
-                ),
-                dataRowMinHeight: 54,
-                dataRowMaxHeight: 54,
-                columns: const [
-                  DataColumn(label: Text('Material')),
-                  DataColumn(label: Text('Tipo')),
-                  DataColumn(label: Text('Quantidade')),
-                  DataColumn(label: Text('Horario')),
-                  DataColumn(label: Text('Status')),
-                ],
-                rows: atividadesRecentes.map((item) {
-                  final created = _createdAt(item);
-                  final quantidade = item is Map
-                      ? (item['Quantidade'] ?? 0).toString()
-                      : '0';
-                  final color = _tipoColor(item);
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final tableWidth = constraints.maxWidth < 760
+                    ? 760.0
+                    : constraints.maxWidth;
 
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(_materialName(item))),
-                      DataCell(
-                        _TypeLabel(
-                          label: _tipoMovimentacao(item),
-                          color: color,
-                        ),
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: DataTable(
+                      columnSpacing: 24,
+                      headingRowColor: WidgetStateProperty.all(
+                        const Color(0xFFF3F4F6),
                       ),
-                      DataCell(Text(quantidade)),
-                      DataCell(
-                        Text(created == null ? '---' : _formatTime(created)),
-                      ),
-                      const DataCell(_StatusBadge(label: 'Verificado')),
-                    ],
-                  );
-                }).toList(),
-              ),
+                      dataRowMinHeight: 54,
+                      dataRowMaxHeight: 54,
+                      columns: const [
+                        DataColumn(label: Text('Material')),
+                        DataColumn(label: Text('Tipo')),
+                        DataColumn(numeric: true, label: Text('Quantidade')),
+                        DataColumn(label: Text('Horario')),
+                        DataColumn(label: Text('Status')),
+                      ],
+                      rows: atividadesRecentes.map((item) {
+                        final created = _createdAt(item);
+                        final quantidade = item is Map
+                            ? (item['Quantidade'] ?? 0).toString()
+                            : '0';
+                        final color = _tipoColor(item);
+
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(_materialName(item))),
+                            DataCell(
+                              _TypeLabel(
+                                label: _tipoMovimentacao(item),
+                                color: color,
+                              ),
+                            ),
+                            DataCell(Text(quantidade)),
+                            DataCell(
+                              Text(
+                                created == null ? '---' : _formatTime(created),
+                              ),
+                            ),
+                            const DataCell(_StatusBadge(label: 'Verificado')),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }

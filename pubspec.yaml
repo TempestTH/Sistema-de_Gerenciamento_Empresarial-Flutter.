@@ -38,6 +38,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   data_table_2: ^2.7.2
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:

@@ -70,17 +70,28 @@ class _AgendaPageState extends State<AgendaPage> {
       final agendamentoCriado = await agendamentoService.inserir(
         novoAgendamento,
       );
-      await agendamentoService.inserirHistorico(
-        AgendamentoHistoricoModel(
-          idAgendamento: agendamentoCriado.id,
-          titulo: 'Ordem de servico criada',
-          descricao: 'Agendamento criado no console de agendamento.',
-        ),
-      );
+      var historicoRegistrado = true;
+      try {
+        await agendamentoService.inserirHistorico(
+          AgendamentoHistoricoModel(
+            idAgendamento: agendamentoCriado.id,
+            titulo: 'Ordem de servico criada',
+            descricao: 'Agendamento criado no console de agendamento.',
+          ),
+        );
+      } catch (_) {
+        historicoRegistrado = false;
+      }
       await carregarAgendamentos();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Servico agendado com sucesso!')),
+        SnackBar(
+          content: Text(
+            historicoRegistrado
+                ? 'Servico agendado com sucesso!'
+                : 'Servico agendado, mas o historico nao foi registrado.',
+          ),
+        ),
       );
     } catch (_) {
       if (!mounted) return;

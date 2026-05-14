@@ -6,6 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseAgendamentoService {
   final SupabaseClient _client = Supabase.instance.client;
+  static const List<String> _historicoTables = [
+    'agendamento_historico',
+    'AgendamentoHistorico',
+  ];
 
   Future<AgendamentoModel> inserir(AgendamentoModel agendamento) async {
     final data = await _client
@@ -92,19 +96,40 @@ class SupabaseAgendamentoService {
   Future<List<AgendamentoHistoricoModel>> listarHistorico(
     int idAgendamento,
   ) async {
-    final data = await _client
-        .from('AgendamentoHistorico')
-        .select()
-        .eq('id_agendamento', idAgendamento)
-        .order('created_at', ascending: false);
+    Object? ultimoErro;
 
-    return (data as List)
-        .map((json) => AgendamentoHistoricoModel.fromJson(json))
-        .toList();
+    for (final table in _historicoTables) {
+      try {
+        final data = await _client
+            .from(table)
+            .select()
+            .eq('id_agendamento', idAgendamento)
+            .order('created_at', ascending: false);
+
+        return (data as List)
+            .map((json) => AgendamentoHistoricoModel.fromJson(json))
+            .toList();
+      } catch (error) {
+        ultimoErro = error;
+      }
+    }
+
+    throw ultimoErro ?? Exception('Historico indisponivel');
   }
 
   Future<void> inserirHistorico(AgendamentoHistoricoModel historico) async {
-    await _client.from('AgendamentoHistorico').insert(historico.toJson());
+    Object? ultimoErro;
+
+    for (final table in _historicoTables) {
+      try {
+        await _client.from(table).insert(historico.toJson());
+        return;
+      } catch (error) {
+        ultimoErro = error;
+      }
+    }
+
+    throw ultimoErro ?? Exception('Historico indisponivel');
   }
 
   Future<void> deletar(int id) async {
