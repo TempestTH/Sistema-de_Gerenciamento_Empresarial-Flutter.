@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/model/agendamento_model.dart';
 import 'package:projeto_elifone/pages/HomePage.dart';
 import 'package:projeto_elifone/pages/adicionarEstoque.dart';
 import 'package:projeto_elifone/pages/adicionarMaterial.dart';
+import 'package:projeto_elifone/pages/agenda_page.dart';
+import 'package:projeto_elifone/pages/detalhes_servico_page.dart';
 
 class MenuRodape extends StatefulWidget {
   const MenuRodape({super.key});
@@ -13,22 +16,39 @@ class MenuRodape extends StatefulWidget {
 class _MenuRodapeState extends State<MenuRodape> {
   int _op = 0;
   bool _expandMaterial = false;
+  AgendamentoModel? _servicoSelecionado;
   final List<String> pageTitles = [
     'Home',
+    'Agenda',
     'Entrada de Material',
     'Saída de Material',
     'Adicionar Material',
-  ];
-  final List<Widget> pages = const [
-    MyHomePage(),
-    AdicionarEstoquePage(Entrada: true, Saida: false),
-    AdicionarEstoquePage(Entrada: false, Saida: true),
-    AdicionarMaterialPage(),
+    'Detalhes do Servico',
   ];
 
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final pages = [
+      const MyHomePage(),
+      AgendaPage(
+        onAbrirDetalhes: (servico) {
+          setState(() {
+            _servicoSelecionado = servico;
+            _op = 5;
+          });
+        },
+      ),
+      const AdicionarEstoquePage(Entrada: true, Saida: false),
+      const AdicionarEstoquePage(Entrada: false, Saida: true),
+      const AdicionarMaterialPage(),
+      _servicoSelecionado == null
+          ? const AgendaPage()
+          : DetalhesServicoPage(
+              agendamento: _servicoSelecionado!,
+              onVoltar: () => setState(() => _op = 1),
+            ),
+    ];
 
     return Scaffold(
       appBar: !isMobile
@@ -45,7 +65,7 @@ class _MenuRodapeState extends State<MenuRodape> {
                       IconButton(
                         icon: const Icon(Icons.add),
                         onPressed: () {
-                          setState(() => _op = 3);
+                          setState(() => _op = 4);
                         },
                       ),
                     ]
@@ -122,6 +142,7 @@ class _MenuRodapeState extends State<MenuRodape> {
         ),
 
         _menuItem(Icons.home, 'Home', 0, isDrawer),
+        _menuItem(Icons.calendar_month, 'Agenda', 1, isDrawer),
         _submenuMaterial(isDrawer, "Material"),
 
         // 🔽 SUBMENU
@@ -161,7 +182,7 @@ class _MenuRodapeState extends State<MenuRodape> {
   }
 
   Widget _submenuMaterial(bool isDrawer, String text) {
-    final bool materialSelecionado = (_op == 1 || _op == 2 || _op == 3);
+    final bool materialSelecionado = (_op == 2 || _op == 3 || _op == 4);
     final bool destacarMaterial = materialSelecionado && !_expandMaterial;
     return _menuWrapper(
       child: Container(
@@ -195,9 +216,9 @@ class _MenuRodapeState extends State<MenuRodape> {
               setState(() => _expandMaterial = value);
             },
             children: [
-              _submenuItem('Entrada', 1, isDrawer, Icons.input),
-              _submenuItem('Saida', 2, isDrawer, Icons.output),
-              _submenuItem('Adicionar', 3, isDrawer, Icons.add),
+              _submenuItem('Entrada', 2, isDrawer, Icons.input),
+              _submenuItem('Saida', 3, isDrawer, Icons.output),
+              _submenuItem('Adicionar', 4, isDrawer, Icons.add),
             ],
           ),
         ),
