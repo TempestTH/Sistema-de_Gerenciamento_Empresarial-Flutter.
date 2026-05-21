@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:intl/intl.dart';
 
@@ -56,10 +57,10 @@ class _EstoqueTableState extends State<EstoqueTable> {
     return Theme(
       data: Theme.of(context).copyWith(
         dataTableTheme: DataTableThemeData(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFFB3E5FE)),
-          dataRowColor: WidgetStateProperty.all(const Color(0xFF1E1E1E)),
+          headingRowColor: WidgetStateProperty.all(AppColors.primary),
+          dataRowColor: WidgetStateProperty.all(AppColors.surface),
           headingTextStyle: const TextStyle(
-            color: Color(0xFF0D47A1),
+            color: AppColors.invertedText,
             fontWeight: FontWeight.bold,
           ),
           dataTextStyle: const TextStyle(color: Color.fromARGB(179, 0, 0, 0)),
@@ -73,25 +74,28 @@ class _EstoqueTableState extends State<EstoqueTable> {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF0D47A1)),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.primary,
+                    ),
                     hintText: "Pesquisar material...",
-                    hintStyle: const TextStyle(color: Color(0xFF0D47A1)),
+                    hintStyle: const TextStyle(color: AppColors.primary),
                     filled: true,
-                    fillColor: const Color(0xFFE1F5FE),
+                    fillColor: AppColors.surfaceAlt,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.text),
                   onChanged: filtrar,
                 ),
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.refresh, color: Color(0xFF0D47A1)),
+                icon: const Icon(Icons.refresh, color: AppColors.primary),
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all(
-                    const Color(0xFFE1F5FE),
+                    AppColors.surfaceAlt,
                   ),
                 ),
                 onPressed: () async {
@@ -168,10 +172,10 @@ class _EstoqueSource extends DataTableSource {
 
     /// 🎨 COR DA LINHA
     final Color rowColor = isEntrada
-        ? Colors.green.withOpacity(0.25)
+        ? AppColors.success.withValues(alpha: 0.18)
         : isSaida
-        ? Colors.red.withOpacity(0.25)
-        : const Color(0xFF1E1E1E);
+        ? AppColors.danger.withValues(alpha: 0.18)
+        : AppColors.surface;
 
     return DataRow.byIndex(
       index: index,

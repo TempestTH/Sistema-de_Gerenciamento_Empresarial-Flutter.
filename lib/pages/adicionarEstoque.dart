@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:projeto_elifone/model/estoque_model.dart';
 import 'package:projeto_elifone/model/material_model.dart';
 import 'package:projeto_elifone/services/supabase_estoque_service.dart';
@@ -191,7 +192,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: AppColors.background,
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -236,7 +237,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
                 SizedBox(height: 4),
                 Text(
                   'Materiais, entradas e saidas em um fluxo unico.',
-                  style: TextStyle(color: Color(0xFF6B7280)),
+                  style: TextStyle(color: AppColors.mutedText),
                 ),
               ],
             ),
@@ -265,8 +266,8 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
             icon: Icon(icon, size: 18),
             label: Text(label),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF111827),
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.surface,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             ),
           )
@@ -275,8 +276,8 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
             icon: Icon(icon, size: 18),
             label: Text(label),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF111827),
-              side: const BorderSide(color: Color(0xFFD1D5DB)),
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.border),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             ),
           );
@@ -457,9 +458,9 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                           ),
-                          tileColor: const Color(0xFFFAFAFA),
+                          tileColor: AppColors.surface,
                           shape: const RoundedRectangleBorder(
-                            side: BorderSide(color: Color(0xFFD1D5DB)),
+                            side: BorderSide(color: AppColors.border),
                           ),
                         ),
                       ],
@@ -548,7 +549,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: AppColors.surface,
                   ),
                 )
               : Text(confirmarLabel),
@@ -576,7 +577,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 13),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -591,9 +592,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
             child: Text(
               '${material.quantidade} ${material.metro ? 'm' : 'un'}',
               style: TextStyle(
-                color: baixo
-                    ? const Color(0xFFDC2626)
-                    : const Color(0xFF111827),
+                color: baixo ? AppColors.danger : AppColors.primary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -603,7 +602,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
             width: 92,
             child: _StatusBadge(
               label: baixo ? 'Critico' : 'Ok',
-              color: baixo ? const Color(0xFFDC2626) : const Color(0xFF059669),
+              color: baixo ? AppColors.danger : AppColors.success,
             ),
           ),
         ],
@@ -625,7 +624,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 13),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -633,7 +632,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
             width: dataWidth,
             child: Text(
               created == null ? '---' : _formatDate(created),
-              style: const TextStyle(color: Color(0xFF6B7280)),
+              style: const TextStyle(color: AppColors.mutedText),
             ),
           ),
           const SizedBox(width: 16),
@@ -662,9 +661,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
               alignment: Alignment.centerLeft,
               child: _StatusBadge(
                 label: entrada ? 'Entrada' : 'Saida',
-                color: entrada
-                    ? const Color(0xFF059669)
-                    : const Color(0xFFDC2626),
+                color: entrada ? AppColors.success : AppColors.danger,
               ),
             ),
           ),
@@ -683,8 +680,8 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFFF3F4F6),
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        color: AppColors.surfaceAlt,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -728,9 +725,13 @@ class _MetricaCard extends StatelessWidget {
       height: 126,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: destaque ? const Color(0xFFFFEEEE) : Colors.white,
+        color: destaque
+            ? AppColors.danger.withValues(alpha: 0.08)
+            : AppColors.surface,
         border: Border.all(
-          color: destaque ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB),
+          color: destaque
+              ? AppColors.danger.withValues(alpha: 0.24)
+              : AppColors.border,
         ),
       ),
       child: Row(
@@ -743,7 +744,7 @@ class _MetricaCard extends StatelessWidget {
                 Text(
                   titulo.toUpperCase(),
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedText,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
@@ -751,7 +752,7 @@ class _MetricaCard extends StatelessWidget {
                 Text(
                   valor,
                   style: const TextStyle(
-                    color: Color(0xFF111827),
+                    color: AppColors.primary,
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
                   ),
@@ -761,17 +762,14 @@ class _MetricaCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedText,
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
-            icon,
-            color: destaque ? const Color(0xFFDC2626) : const Color(0xFF111827),
-          ),
+          Icon(icon, color: destaque ? AppColors.danger : AppColors.primary),
         ],
       ),
     );
@@ -791,8 +789,8 @@ class _Painel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFD1D5DB)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,15 +831,19 @@ class _AvisoEstoque extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: baixo ? const Color(0xFFFFEEEE) : const Color(0xFFF3F4F6),
+        color: baixo
+            ? AppColors.danger.withValues(alpha: 0.08)
+            : AppColors.surfaceAlt,
         border: Border.all(
-          color: baixo ? const Color(0xFFFCA5A5) : const Color(0xFFE5E7EB),
+          color: baixo
+              ? AppColors.danger.withValues(alpha: 0.24)
+              : AppColors.border,
         ),
       ),
       child: Text(
         'Saldo em estoque: ${material.quantidade} ${material.metro ? 'm' : 'un'}',
         style: TextStyle(
-          color: baixo ? const Color(0xFF991B1B) : const Color(0xFF111827),
+          color: baixo ? AppColors.danger : AppColors.primary,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -883,7 +885,7 @@ class _TableLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: const TextStyle(
-        color: Color(0xFF6B7280),
+        color: AppColors.mutedText,
         fontSize: 11,
         fontWeight: FontWeight.w900,
       ),
@@ -904,7 +906,7 @@ class _EmptyState extends StatelessWidget {
         child: Text(
           message,
           style: const TextStyle(
-            color: Color(0xFF6B7280),
+            color: AppColors.mutedText,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -917,7 +919,7 @@ Widget _label(String text) {
   return Text(
     text.toUpperCase(),
     style: const TextStyle(
-      color: Color(0xFF374151),
+      color: AppColors.secondary,
       fontSize: 11,
       fontWeight: FontWeight.w900,
     ),
@@ -928,23 +930,23 @@ InputDecoration _fieldDecoration(String hint) {
   return InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: const Color(0xFFFAFAFA),
+    fillColor: AppColors.surface,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     enabledBorder: const OutlineInputBorder(
       borderRadius: BorderRadius.zero,
-      borderSide: BorderSide(color: Color(0xFFD1D5DB)),
+      borderSide: BorderSide(color: AppColors.border),
     ),
     focusedBorder: const OutlineInputBorder(
       borderRadius: BorderRadius.zero,
-      borderSide: BorderSide(color: Color(0xFF111827)),
+      borderSide: BorderSide(color: AppColors.primary),
     ),
   );
 }
 
 ButtonStyle _primaryButtonStyle() {
   return FilledButton.styleFrom(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
   );
@@ -952,8 +954,8 @@ ButtonStyle _primaryButtonStyle() {
 
 ButtonStyle _secondaryButtonStyle() {
   return OutlinedButton.styleFrom(
-    foregroundColor: Colors.black,
-    side: const BorderSide(color: Color(0xFFD1D5DB)),
+    foregroundColor: AppColors.primary,
+    side: const BorderSide(color: AppColors.border),
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
   );

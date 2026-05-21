@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:projeto_elifone/model/material_model.dart';
 import 'package:projeto_elifone/services/supabase_estoque_service.dart';
 import 'package:projeto_elifone/services/supabase_material_service.dart';
@@ -129,15 +130,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Color _tipoColor(dynamic item) {
-    if (_isEntrada(item)) return const Color(0xFF1F9D55);
-    if (_isSaida(item)) return const Color(0xFFE3342F);
-    return const Color(0xFFF2C94C);
+    if (_isEntrada(item)) return AppColors.success;
+    if (_isSaida(item)) return AppColors.danger;
+    return AppColors.warning;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
+      backgroundColor: AppColors.background,
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -185,13 +186,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF111827),
+                    color: AppColors.primary,
                   ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Metricas em tempo real e saude do inventario.',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                  style: TextStyle(fontSize: 14, color: AppColors.mutedText),
                 ),
               ],
             ),
@@ -212,8 +213,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Nova Entrada'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF111827),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.surface,
                   ),
                 ),
               ],
@@ -230,14 +231,14 @@ class _MyHomePageState extends State<MyHomePage> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F2),
+        color: AppColors.danger.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.24)),
       ),
       child: Text(
         errorMessage!,
         style: const TextStyle(
-          color: Color(0xFFB91C1C),
+          color: AppColors.danger,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -251,28 +252,28 @@ class _MyHomePageState extends State<MyHomePage> {
         value: _formatNumber(totalEmEstoque),
         subtitle: '${materiais.length} materiais cadastrados',
         icon: Icons.inventory_2_outlined,
-        color: const Color(0xFF111827),
+        color: AppColors.primary,
       ),
       _MetricCardData(
         title: 'Entradas Recentes',
         value: entradas24h.toString(),
         subtitle: 'Ultimas 24h',
         icon: Icons.login,
-        color: const Color(0xFF2563EB),
+        color: AppColors.secondary,
       ),
       _MetricCardData(
         title: 'Saidas Recentes',
         value: saidas24h.toString(),
         subtitle: 'Ultimas 24h',
         icon: Icons.logout,
-        color: const Color(0xFFE3342F),
+        color: AppColors.danger,
       ),
       _MetricCardData(
         title: 'Movimentacoes',
         value: movimentacoes24h.toString(),
         subtitle: 'Entradas e saidas nas ultimas 24h',
         icon: Icons.sync_alt,
-        color: const Color(0xFF7C3AED),
+        color: AppColors.tertiary,
       ),
     ];
 
@@ -356,7 +357,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: DataTable(
                       columnSpacing: 24,
                       headingRowColor: WidgetStateProperty.all(
-                        const Color(0xFFF3F4F6),
+                        AppColors.surfaceAlt,
                       ),
                       dataRowMinHeight: 54,
                       dataRowMaxHeight: 54,
@@ -431,25 +432,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      color: const Color(0xFF01579B),
+      color: AppColors.primary,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 3,
       child: Theme(
         data: Theme.of(context).copyWith(
-          hoverColor: const Color(0xFF0277BD),
+          hoverColor: AppColors.secondary,
           dividerColor: Colors.transparent,
         ),
         child: ExpansionTile(
           title: Text(
             title,
             style: const TextStyle(
-              color: Color(0xFFE1F5FE),
+              color: AppColors.surfaceAlt,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-          collapsedIconColor: Colors.white,
-          iconColor: Colors.white,
+          collapsedIconColor: AppColors.surface,
+          iconColor: AppColors.surface,
           childrenPadding: const EdgeInsets.all(16),
           children: [
             isEmpty
@@ -458,7 +459,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Text(
                       emptyMessage,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style: const TextStyle(
+                        color: AppColors.surface,
+                        fontSize: 16,
+                      ),
                     ),
                   )
                 : child,
@@ -518,9 +522,9 @@ class _MetricCard extends StatelessWidget {
       height: 160,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,7 +550,7 @@ class _MetricCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedText,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -560,7 +564,7 @@ class _MetricCard extends StatelessWidget {
               Text(
                 data.title.toUpperCase(),
                 style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: AppColors.mutedText,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -569,7 +573,7 @@ class _MetricCard extends StatelessWidget {
               Text(
                 data.value,
                 style: const TextStyle(
-                  color: Color(0xFF111827),
+                  color: AppColors.primary,
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                 ),
@@ -601,22 +605,22 @@ class _DashboardPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: const Color(0xFFE3342F), size: 22),
+              Icon(icon, color: AppColors.danger, size: 22),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF374151),
+                    color: AppColors.secondary,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
@@ -625,7 +629,7 @@ class _DashboardPanel extends StatelessWidget {
               Text(
                 actionLabel,
                 style: const TextStyle(
-                  color: Color(0xFF374151),
+                  color: AppColors.secondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -647,15 +651,15 @@ class _LowStockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCritical = material.quantidade <= 1;
+    final isCritical = material.quantidade <= 10;
 
     return Container(
       height: 96,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
+        border: Border.all(color: AppColors.surfaceAlt),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,23 +672,21 @@ class _LowStockCard extends StatelessWidget {
                   material.nome,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF374151),
+                    color: AppColors.secondary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
               _AlertBadge(
                 label: isCritical ? 'Critico' : 'Atencao',
-                color: isCritical
-                    ? const Color(0xFFE3342F)
-                    : const Color(0xFFF2C94C),
+                color: isCritical ? AppColors.danger : AppColors.warning,
               ),
             ],
           ),
           Text(
             'Quantidade atual'.toUpperCase(),
             style: const TextStyle(
-              color: Color(0xFF6B7280),
+              color: AppColors.mutedText,
               fontSize: 10,
               fontWeight: FontWeight.w700,
             ),
@@ -695,9 +697,7 @@ class _LowStockCard extends StatelessWidget {
                 TextSpan(
                   text: material.quantidade.toString(),
                   style: TextStyle(
-                    color: isCritical
-                        ? const Color(0xFFE3342F)
-                        : const Color(0xFF374151),
+                    color: isCritical ? AppColors.danger : AppColors.secondary,
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                   ),
@@ -705,7 +705,7 @@ class _LowStockCard extends StatelessWidget {
                 TextSpan(
                   text: material.metro ? ' m' : ' unid.',
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedText,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -778,13 +778,13 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFD1FAE5),
+        color: AppColors.success.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label.toUpperCase(),
         style: const TextStyle(
-          color: Color(0xFF047857),
+          color: AppColors.success,
           fontSize: 10,
           fontWeight: FontWeight.w900,
         ),
@@ -807,7 +807,7 @@ class _EmptyState extends StatelessWidget {
           message,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: Color(0xFF6B7280),
+            color: AppColors.mutedText,
             fontWeight: FontWeight.w600,
           ),
         ),

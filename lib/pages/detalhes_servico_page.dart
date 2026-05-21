@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:projeto_elifone/model/agendamento_anexo_model.dart';
 import 'package:projeto_elifone/model/agendamento_historico_model.dart';
@@ -403,7 +404,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.background,
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -467,7 +468,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
                   const SizedBox(width: 8),
                   Text(
                     'Ref: OS-${(agendamento.id ?? 0).toString().padLeft(4, '0')}',
-                    style: const TextStyle(color: Color(0xFF4B5563)),
+                    style: const TextStyle(color: AppColors.secondary),
                   ),
                 ],
               ),
@@ -503,8 +504,8 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
                 icon: const Icon(Icons.task_alt, size: 18),
                 label: const Text('Concluir Servico'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF059669),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.success,
+                  foregroundColor: AppColors.surface,
                   shape: const RoundedRectangleBorder(),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
@@ -603,7 +604,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
               ...itens.map(_buildItemRow),
               Container(
                 padding: const EdgeInsets.all(14),
-                color: const Color(0xFFF4F4F5),
+                color: AppColors.surfaceAlt,
                 child: Row(
                   children: [
                     const Expanded(
@@ -643,15 +644,15 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.surface,
                   border: Border.all(
-                    color: const Color(0xFFD1D5DB),
+                    color: AppColors.border,
                     style: BorderStyle.solid,
                   ),
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.cloud_upload, color: Color(0xFF2563EB)),
+                    const Icon(Icons.cloud_upload, color: AppColors.secondary),
                     const SizedBox(height: 12),
                     const Text(
                       'Adicionar OS, foto ou comprovante',
@@ -717,7 +718,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
@@ -742,7 +743,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
             width: 42,
             child: IconButton(
               onPressed: () => _removerItem(item),
-              icon: const Icon(Icons.delete_outline, color: Color(0xFFDC2626)),
+              icon: const Icon(Icons.delete_outline, color: AppColors.danger),
             ),
           ),
         ],
@@ -755,8 +756,8 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFA),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -771,7 +772,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
           ),
           IconButton(
             onPressed: () => _removerAnexo(anexo),
-            icon: const Icon(Icons.delete_outline, color: Color(0xFFDC2626)),
+            icon: const Icon(Icons.delete_outline, color: AppColors.danger),
           ),
         ],
       ),
@@ -789,7 +790,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
             height: 8,
             margin: const EdgeInsets.only(top: 5),
             decoration: const BoxDecoration(
-              color: Colors.black,
+              color: AppColors.primary,
               shape: BoxShape.circle,
             ),
           ),
@@ -803,7 +804,7 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
                       ? 'Agora'
                       : _formatDate(item.createdAt!),
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedText,
                     fontSize: 11,
                   ),
                 ),
@@ -877,7 +878,7 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
         constraints: const BoxConstraints(maxWidth: 520),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: const Color(0xFFFBF9FA),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Column(
@@ -952,7 +953,7 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
                           child: Text(
                             'Preco unitario: ${_formatCurrency(materialSelecionado!.valor)}',
                             style: const TextStyle(
-                              color: Color(0xFF374151),
+                              color: AppColors.secondary,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -1068,9 +1069,9 @@ class _Panel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFD1D5DB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1128,11 +1129,11 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      color: const Color(0xFFDDEBFF),
+      color: AppColors.secondary.withValues(alpha: 0.14),
       child: Text(
         status.toUpperCase(),
         style: const TextStyle(
-          color: Color(0xFF111827),
+          color: AppColors.primary,
           fontSize: 11,
           fontWeight: FontWeight.w900,
         ),
@@ -1145,7 +1146,7 @@ Widget _sectionLabel(String label) {
   return Text(
     label.toUpperCase(),
     style: const TextStyle(
-      color: Color(0xFF374151),
+      color: AppColors.secondary,
       fontSize: 11,
       fontWeight: FontWeight.w900,
     ),
@@ -1156,23 +1157,23 @@ InputDecoration _fieldDecoration(String hint) {
   return InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: const Color(0xFFFAFAFA),
+    fillColor: AppColors.surface,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     enabledBorder: const OutlineInputBorder(
       borderRadius: BorderRadius.zero,
-      borderSide: BorderSide(color: Color(0xFFD1D5DB)),
+      borderSide: BorderSide(color: AppColors.border),
     ),
     focusedBorder: const OutlineInputBorder(
       borderRadius: BorderRadius.zero,
-      borderSide: BorderSide(color: Colors.black),
+      borderSide: BorderSide(color: AppColors.primary),
     ),
   );
 }
 
 ButtonStyle _primaryButtonStyle() {
   return FilledButton.styleFrom(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
   );
@@ -1180,8 +1181,8 @@ ButtonStyle _primaryButtonStyle() {
 
 ButtonStyle _secondaryButtonStyle() {
   return OutlinedButton.styleFrom(
-    foregroundColor: Colors.black,
-    side: const BorderSide(color: Color(0xFFD1D5DB)),
+    foregroundColor: AppColors.primary,
+    side: const BorderSide(color: AppColors.border),
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
   );

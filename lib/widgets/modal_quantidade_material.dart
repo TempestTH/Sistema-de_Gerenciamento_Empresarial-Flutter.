@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 
 class ModalQuantidadeMaterial extends StatelessWidget {
   final List<dynamic> materiaisSelecionados;
@@ -20,7 +21,7 @@ class ModalQuantidadeMaterial extends StatelessWidget {
       child: Text(
         text.toUpperCase(),
         style: const TextStyle(
-          color: Color(0xFF6B7280),
+          color: AppColors.mutedText,
           fontSize: 11,
           fontWeight: FontWeight.w900,
         ),
@@ -31,17 +32,17 @@ class ModalQuantidadeMaterial extends StatelessWidget {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+      hintStyle: const TextStyle(color: AppColors.neutral, fontSize: 14),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.zero,
-        borderSide: BorderSide(color: Color(0xFFD1D5DB)),
+        borderSide: BorderSide(color: AppColors.border),
       ),
       focusedBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.zero,
-        borderSide: BorderSide(color: Color(0xFF111827), width: 1.2),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.2),
       ),
     );
   }
@@ -58,13 +59,13 @@ class ModalQuantidadeMaterial extends StatelessWidget {
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: const Color(0xFFFBF9FA),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(6),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x33000000),
+                color: AppColors.primary.withValues(alpha: 0.2),
                 blurRadius: 24,
-                offset: Offset(0, 12),
+                offset: const Offset(0, 12),
               ),
             ],
           ),
@@ -79,7 +80,7 @@ class ModalQuantidadeMaterial extends StatelessWidget {
                       child: Text(
                         'Adicionar Quantidades',
                         style: TextStyle(
-                          color: Color(0xFF2F3137),
+                          color: AppColors.secondary,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -94,7 +95,7 @@ class ModalQuantidadeMaterial extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFD9D9DE)),
+              const Divider(height: 1, color: AppColors.border),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -119,7 +120,7 @@ class ModalQuantidadeMaterial extends StatelessWidget {
                   ),
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              const Divider(height: 1, color: AppColors.border),
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -142,7 +143,7 @@ class ModalQuantidadeMaterial extends StatelessWidget {
                               width: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.surface,
                               ),
                             )
                           : const Text('Confirmar'),
@@ -160,8 +161,8 @@ class ModalQuantidadeMaterial extends StatelessWidget {
 
 ButtonStyle _modalPrimaryButtonStyle() {
   return FilledButton.styleFrom(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
   );
@@ -169,8 +170,8 @@ ButtonStyle _modalPrimaryButtonStyle() {
 
 ButtonStyle _modalSecondaryButtonStyle() {
   return OutlinedButton.styleFrom(
-    foregroundColor: const Color(0xFF374151),
-    side: const BorderSide(color: Color(0xFFD1D5DB)),
+    foregroundColor: AppColors.secondary,
+    side: const BorderSide(color: AppColors.border),
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
   );

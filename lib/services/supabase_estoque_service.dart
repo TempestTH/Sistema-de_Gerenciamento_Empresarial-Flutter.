@@ -6,9 +6,7 @@ class SupabaseEstoqueService {
 
   // CREATE
   Future<void> inserir(EstoqueModel estoque) async {
-    await _client
-        .from('Estoque')
-        .insert(estoque.toJson());
+    await _client.from('Estoque').insert(estoque.toJson());
   }
 
   // READ
@@ -30,12 +28,8 @@ class SupabaseEstoqueService {
     return data;
   }
 
-
   // DELETE
   Future<void> deletar(int id) async {
-    await _client
-        .from('Estoque')
-        .delete()
-        .eq('id', id);
+    await _client.from('Estoque').delete().eq('id', id);
   }
 }

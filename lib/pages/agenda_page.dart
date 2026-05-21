@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:projeto_elifone/model/agendamento_historico_model.dart';
 import 'package:projeto_elifone/model/agendamento_model.dart';
 import 'package:projeto_elifone/services/supabase_agendamento_service.dart';
@@ -170,7 +171,7 @@ class _AgendaPageState extends State<AgendaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.background,
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -217,7 +218,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 Text(
                   'Console de Agendamento',
                   style: TextStyle(
-                    color: Color(0xFF111827),
+                    color: AppColors.primary,
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                   ),
@@ -225,7 +226,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 SizedBox(height: 4),
                 Text(
                   'Servicos distribuidos por mes, semana e agenda diaria.',
-                  style: TextStyle(color: Color(0xFF6B7280)),
+                  style: TextStyle(color: AppColors.mutedText),
                 ),
               ],
             ),
@@ -244,8 +245,8 @@ class _AgendaPageState extends State<AgendaPage> {
                   icon: const Icon(Icons.refresh, size: 18),
                   label: const Text('Atualizar'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF111827),
-                    side: const BorderSide(color: Color(0xFFE5E7EB)),
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.border),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 16,
@@ -257,8 +258,8 @@ class _AgendaPageState extends State<AgendaPage> {
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('Novo Servico'),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF111827),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.surface,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 18,
                       vertical: 16,
@@ -279,9 +280,9 @@ class _AgendaPageState extends State<AgendaPage> {
     return OutlinedButton(
       onPressed: () => setState(() => modo = value),
       style: OutlinedButton.styleFrom(
-        backgroundColor: selected ? const Color(0xFFE5E7EB) : Colors.white,
-        foregroundColor: const Color(0xFF111827),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        backgroundColor: selected ? AppColors.border : AppColors.surface,
+        foregroundColor: AppColors.primary,
+        side: const BorderSide(color: AppColors.border),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
       child: Text(label),
@@ -300,9 +301,9 @@ class _AgendaPageState extends State<AgendaPage> {
       child: Container(
         height: 52,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -352,14 +353,14 @@ class _AgendaPageState extends State<AgendaPage> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
+        color: AppColors.warning.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.24)),
       ),
       child: Text(
         aviso!,
         style: const TextStyle(
-          color: Color(0xFF92400E),
+          color: AppColors.warning,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -421,9 +422,9 @@ class _AgendaPageState extends State<AgendaPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -457,9 +458,9 @@ class _AgendaPageState extends State<AgendaPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -484,16 +485,16 @@ class _AgendaPageState extends State<AgendaPage> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFF9FAFB),
+                        color: AppColors.surface,
                         border: Border(
-                          right: BorderSide(color: Color(0xFFE5E7EB)),
-                          bottom: BorderSide(color: Color(0xFFE5E7EB)),
+                          right: BorderSide(color: AppColors.border),
+                          bottom: BorderSide(color: AppColors.border),
                         ),
                       ),
                       child: Text(
                         _weekdayName(index + 1).substring(0, 3).toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFF6B7280),
+                          color: AppColors.mutedText,
                           fontSize: 11,
                           fontWeight: FontWeight.w900,
                         ),
@@ -547,13 +548,13 @@ class _AgendaPageState extends State<AgendaPage> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: selected
-              ? const Color(0xFFF3F4F6)
+              ? AppColors.surfaceAlt
               : foraDoMes
-              ? const Color(0xFFFAFAFA)
-              : Colors.white,
+              ? AppColors.surface
+              : AppColors.surface,
           border: const Border(
-            right: BorderSide(color: Color(0xFFE5E7EB)),
-            bottom: BorderSide(color: Color(0xFFE5E7EB)),
+            right: BorderSide(color: AppColors.border),
+            bottom: BorderSide(color: AppColors.border),
           ),
         ),
         child: Column(
@@ -562,9 +563,7 @@ class _AgendaPageState extends State<AgendaPage> {
             Text(
               dia.day.toString().padLeft(2, '0'),
               style: TextStyle(
-                color: foraDoMes
-                    ? const Color(0xFF9CA3AF)
-                    : const Color(0xFF111827),
+                color: foraDoMes ? AppColors.neutral : AppColors.primary,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -577,7 +576,7 @@ class _AgendaPageState extends State<AgendaPage> {
               Text(
                 '+${itens.length - visibleItems.length} servicos',
                 style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: AppColors.mutedText,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
@@ -611,10 +610,10 @@ class _AgendaPageState extends State<AgendaPage> {
         constraints: BoxConstraints(minHeight: minHeight),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF3F4F6) : Colors.white,
+          color: selected ? AppColors.surfaceAlt : AppColors.surface,
           border: const Border(
-            right: BorderSide(color: Color(0xFFE5E7EB)),
-            bottom: BorderSide(color: Color(0xFFE5E7EB)),
+            right: BorderSide(color: AppColors.border),
+            bottom: BorderSide(color: AppColors.border),
           ),
         ),
         child: Column(
@@ -623,7 +622,7 @@ class _AgendaPageState extends State<AgendaPage> {
             Text(
               _weekdayName(dia.weekday).toUpperCase(),
               style: const TextStyle(
-                color: Color(0xFF6B7280),
+                color: AppColors.mutedText,
                 fontSize: 11,
                 fontWeight: FontWeight.w900,
               ),
@@ -632,7 +631,7 @@ class _AgendaPageState extends State<AgendaPage> {
             Text(
               dia.day.toString().padLeft(2, '0'),
               style: const TextStyle(
-                color: Color(0xFF111827),
+                color: AppColors.primary,
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
               ),
@@ -641,7 +640,7 @@ class _AgendaPageState extends State<AgendaPage> {
             if (itens.isEmpty)
               const Text(
                 'Sem servicos',
-                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12),
+                style: TextStyle(color: AppColors.neutral, fontSize: 12),
               )
             else
               ...itens.map(_buildServicoChip),
@@ -673,7 +672,7 @@ class _AgendaPageState extends State<AgendaPage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Color(0xFF111827),
+                color: AppColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
               ),
@@ -683,7 +682,7 @@ class _AgendaPageState extends State<AgendaPage> {
               item.cliente,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11),
+              style: const TextStyle(color: AppColors.mutedText, fontSize: 11),
             ),
           ],
         ),
@@ -700,9 +699,9 @@ class _AgendaPageState extends State<AgendaPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,7 +709,7 @@ class _AgendaPageState extends State<AgendaPage> {
           Text(
             'Agenda diaria - ${_formatDate(dataReferencia)}',
             style: const TextStyle(
-              color: Color(0xFF111827),
+              color: AppColors.primary,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
@@ -733,7 +732,7 @@ class _AgendaPageState extends State<AgendaPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -743,7 +742,7 @@ class _AgendaPageState extends State<AgendaPage> {
             child: Text(
               '${hora.toString().padLeft(2, '0')}:00',
               style: const TextStyle(
-                color: Color(0xFF6B7280),
+                color: AppColors.mutedText,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -752,7 +751,7 @@ class _AgendaPageState extends State<AgendaPage> {
             child: itens.isEmpty
                 ? const Text(
                     'Horario livre',
-                    style: TextStyle(color: Color(0xFF9CA3AF)),
+                    style: TextStyle(color: AppColors.neutral),
                   )
                 : Column(children: itens.map(_buildServicoLista).toList()),
           ),
@@ -771,9 +770,9 @@ class _AgendaPageState extends State<AgendaPage> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFFAFAFA),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -793,14 +792,14 @@ class _AgendaPageState extends State<AgendaPage> {
                   Text(
                     item.servico,
                     style: const TextStyle(
-                      color: Color(0xFF111827),
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     '${item.cliente} - ${item.responsavel}',
-                    style: const TextStyle(color: Color(0xFF6B7280)),
+                    style: const TextStyle(color: AppColors.mutedText),
                   ),
                 ],
               ),
@@ -920,7 +919,7 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
       child: Text(
         text.toUpperCase(),
         style: const TextStyle(
-          color: Color(0xFF6B7280),
+          color: AppColors.mutedText,
           fontSize: 11,
           fontWeight: FontWeight.w900,
         ),
@@ -931,17 +930,17 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+      hintStyle: const TextStyle(color: AppColors.neutral, fontSize: 14),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.zero,
-        borderSide: BorderSide(color: Color(0xFFD1D5DB)),
+        borderSide: BorderSide(color: AppColors.border),
       ),
       focusedBorder: const OutlineInputBorder(
         borderRadius: BorderRadius.zero,
-        borderSide: BorderSide(color: Color(0xFF111827), width: 1.2),
+        borderSide: BorderSide(color: AppColors.primary, width: 1.2),
       ),
     );
   }
@@ -958,13 +957,13 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
         ),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: const Color(0xFFFBF9FA),
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(6),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x33000000),
+                color: AppColors.primary.withValues(alpha: 0.2),
                 blurRadius: 24,
-                offset: Offset(0, 12),
+                offset: const Offset(0, 12),
               ),
             ],
           ),
@@ -979,7 +978,7 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
                       child: Text(
                         'Adicionar Novo Servico',
                         style: TextStyle(
-                          color: Color(0xFF2F3137),
+                          color: AppColors.secondary,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -992,7 +991,7 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFD9D9DE)),
+              const Divider(height: 1, color: AppColors.border),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -1130,7 +1129,7 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
                   ),
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              const Divider(height: 1, color: AppColors.border),
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -1178,9 +1177,9 @@ class _MetricaCard extends StatelessWidget {
       height: 136,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1194,7 +1193,7 @@ class _MetricaCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.mutedText,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1204,14 +1203,10 @@ class _MetricaCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  data.icon,
-                  size: 20,
-                  color: const Color(0xFF111827),
-                ),
+                child: Icon(data.icon, size: 20, color: AppColors.primary),
               ),
             ],
           ),
@@ -1223,7 +1218,7 @@ class _MetricaCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Color(0xFF111827),
+                  color: AppColors.primary,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                 ),
@@ -1233,7 +1228,10 @@ class _MetricaCard extends StatelessWidget {
                 data.legenda,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                style: const TextStyle(
+                  color: AppColors.mutedText,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -1245,8 +1243,8 @@ class _MetricaCard extends StatelessWidget {
 
 ButtonStyle _modalPrimaryButtonStyle() {
   return FilledButton.styleFrom(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
   );
@@ -1254,8 +1252,8 @@ ButtonStyle _modalPrimaryButtonStyle() {
 
 ButtonStyle _modalSecondaryButtonStyle() {
   return OutlinedButton.styleFrom(
-    foregroundColor: const Color(0xFF374151),
-    side: const BorderSide(color: Color(0xFFD1D5DB)),
+    foregroundColor: AppColors.secondary,
+    side: const BorderSide(color: AppColors.border),
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
   );
@@ -1263,8 +1261,8 @@ ButtonStyle _modalSecondaryButtonStyle() {
 
 ButtonStyle _modalOutlineButtonStyle() {
   return OutlinedButton.styleFrom(
-    foregroundColor: const Color(0xFF374151),
-    side: const BorderSide(color: Color(0xFFD1D5DB)),
+    foregroundColor: AppColors.secondary,
+    side: const BorderSide(color: AppColors.border),
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(vertical: 16),
   );
@@ -1327,12 +1325,12 @@ String _formatTimeOfDay(TimeOfDay time) {
 Color _statusColor(String status) {
   switch (status) {
     case 'Concluido':
-      return const Color(0xFF059669);
+      return AppColors.success;
     case 'Urgente':
-      return const Color(0xFFDC2626);
+      return AppColors.danger;
     case 'Cancelado':
-      return const Color(0xFF6B7280);
+      return AppColors.mutedText;
     default:
-      return const Color(0xFF2563EB);
+      return AppColors.secondary;
   }
 }

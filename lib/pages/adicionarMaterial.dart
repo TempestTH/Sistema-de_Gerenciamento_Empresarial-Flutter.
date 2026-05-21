@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:projeto_elifone/model/material_model.dart';
 import 'package:projeto_elifone/services/supabase_material_service.dart';
 
@@ -66,7 +67,7 @@ class _AdicionarMaterialPageState extends State<AdicionarMaterialPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: AppColors.background,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -79,15 +80,15 @@ class _AdicionarMaterialPageState extends State<AdicionarMaterialPage> {
             const SizedBox(height: 4),
             const Text(
               'Cadastro direto para itens usados no estoque e nas ordens.',
-              style: TextStyle(color: Color(0xFF6B7280)),
+              style: TextStyle(color: AppColors.mutedText),
             ),
             const SizedBox(height: 18),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFD1D5DB)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +125,7 @@ class _AdicionarMaterialPageState extends State<AdicionarMaterialPage> {
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AppColors.surface,
                                 ),
                               )
                             : const Text('Salvar Material'),
@@ -172,9 +173,9 @@ class _AdicionarMaterialPageState extends State<AdicionarMaterialPage> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                             ),
-                            tileColor: const Color(0xFFFAFAFA),
+                            tileColor: AppColors.surface,
                             shape: const RoundedRectangleBorder(
-                              side: BorderSide(color: Color(0xFFD1D5DB)),
+                              side: BorderSide(color: AppColors.border),
                             ),
                           ),
                         ],
@@ -214,7 +215,7 @@ Widget _label(String text) {
   return Text(
     text.toUpperCase(),
     style: const TextStyle(
-      color: Color(0xFF374151),
+      color: AppColors.secondary,
       fontSize: 11,
       fontWeight: FontWeight.w900,
     ),
@@ -225,23 +226,23 @@ InputDecoration _fieldDecoration(String hint) {
   return InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: const Color(0xFFFAFAFA),
+    fillColor: AppColors.surface,
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     enabledBorder: const OutlineInputBorder(
       borderRadius: BorderRadius.zero,
-      borderSide: BorderSide(color: Color(0xFFD1D5DB)),
+      borderSide: BorderSide(color: AppColors.border),
     ),
     focusedBorder: const OutlineInputBorder(
       borderRadius: BorderRadius.zero,
-      borderSide: BorderSide(color: Color(0xFF111827)),
+      borderSide: BorderSide(color: AppColors.primary),
     ),
   );
 }
 
 ButtonStyle _primaryButtonStyle() {
   return FilledButton.styleFrom(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
+    backgroundColor: AppColors.primary,
+    foregroundColor: AppColors.surface,
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
   );
@@ -249,8 +250,8 @@ ButtonStyle _primaryButtonStyle() {
 
 ButtonStyle _secondaryButtonStyle() {
   return OutlinedButton.styleFrom(
-    foregroundColor: Colors.black,
-    side: const BorderSide(color: Color(0xFFD1D5DB)),
+    foregroundColor: AppColors.primary,
+    side: const BorderSide(color: AppColors.border),
     shape: const RoundedRectangleBorder(),
     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
   );

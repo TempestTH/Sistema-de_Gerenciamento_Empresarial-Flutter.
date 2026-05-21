@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:data_table_2/data_table_2.dart';
 
 class MateriaisTable extends StatefulWidget {
@@ -54,13 +55,13 @@ class _MateriaisTableState extends State<MateriaisTable> {
     return Theme(
       data: Theme.of(context).copyWith(
         dataTableTheme: DataTableThemeData(
-          headingRowColor: WidgetStateProperty.all(const Color(0xFFB3E5FE)),
-          dataRowColor: WidgetStateProperty.all(const Color(0xFF1E1E1E)),
+          headingRowColor: WidgetStateProperty.all(AppColors.primary),
+          dataRowColor: WidgetStateProperty.all(AppColors.surface),
           headingTextStyle: const TextStyle(
-            color: Color(0xFF0D47A1),
+            color: AppColors.invertedText,
             fontWeight: FontWeight.bold,
           ),
-          dataTextStyle: const TextStyle(color: Colors.white70),
+          dataTextStyle: const TextStyle(color: AppColors.text),
           dividerThickness: 1,
         ),
       ),
@@ -72,16 +73,19 @@ class _MateriaisTableState extends State<MateriaisTable> {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF0D47A1)),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.primary,
+                    ),
                     hintText: "Pesquisar material...",
-                    hintStyle: const TextStyle(color: Color(0xFF0D47A1)),
+                    hintStyle: const TextStyle(color: AppColors.primary),
                     filled: true,
-                    fillColor: const Color(0xFFE1F5FE),
+                    fillColor: AppColors.surfaceAlt,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: AppColors.text),
                   onChanged: filtrar,
                 ),
               ),
@@ -89,9 +93,11 @@ class _MateriaisTableState extends State<MateriaisTable> {
               const SizedBox(width: 8),
 
               IconButton(
-                icon: const Icon(Icons.refresh, color: Color(0xFF0D47A1)),
+                icon: const Icon(Icons.refresh, color: AppColors.primary),
                 style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(Color(0xFFE1F5FE)),
+                  backgroundColor: WidgetStateProperty.all(
+                    AppColors.surfaceAlt,
+                  ),
                 ),
                 onPressed: () async {
                   await widget.onRefresh?.call();
@@ -148,24 +154,24 @@ class _TableSource extends DataTableSource {
 
     return DataRow.byIndex(
       index: index,
-      color: WidgetStateProperty.all(const Color(0xFFE1F5FE)),
+      color: WidgetStateProperty.all(AppColors.surfaceAlt),
       cells: [
         DataCell(
           Text(
             item.nome.toString(),
-            style: TextStyle(color: Color(0xFF0D47A1)),
+            style: TextStyle(color: AppColors.primary),
           ),
         ),
         DataCell(
           Text(
             item.quantidade.toString(),
-            style: TextStyle(color: Color(0xFF0D47A1)),
+            style: TextStyle(color: AppColors.primary),
           ),
         ),
         DataCell(
           Text(
             item.valor.toString(),
-            style: TextStyle(color: Color(0xFF0D47A1)),
+            style: TextStyle(color: AppColors.primary),
           ),
         ),
       ],

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:projeto_elifone/model/agendamento_model.dart';
 import 'package:projeto_elifone/pages/HomePage.dart';
 import 'package:projeto_elifone/pages/adicionarEstoque.dart';
 import 'package:projeto_elifone/pages/agenda_page.dart';
 import 'package:projeto_elifone/pages/detalhes_servico_page.dart';
+import 'package:projeto_elifone/pages/orcamento_page.dart';
 
 class MenuRodape extends StatefulWidget {
   const MenuRodape({super.key});
@@ -20,6 +22,7 @@ class _MenuRodapeState extends State<MenuRodape> {
     'Home',
     'Agenda',
     'Gerenciamento de Estoque',
+    'Orcamentos',
     'Detalhes do Servico',
   ];
 
@@ -32,11 +35,12 @@ class _MenuRodapeState extends State<MenuRodape> {
         onAbrirDetalhes: (servico) {
           setState(() {
             _servicoSelecionado = servico;
-            _op = 3;
+            _op = 4;
           });
         },
       ),
       const AdicionarEstoquePage(),
+      const OrcamentoPage(),
       _servicoSelecionado == null
           ? const AgendaPage()
           : DetalhesServicoPage(
@@ -50,7 +54,7 @@ class _MenuRodapeState extends State<MenuRodape> {
       appBar: !isMobile
           ? null
           : AppBar(
-              backgroundColor: const Color(0xFFB3E5FC),
+              backgroundColor: AppColors.primary,
               title: Text(pageTitles[_op]),
               actions: [
                 IconButton(
@@ -70,7 +74,7 @@ class _MenuRodapeState extends State<MenuRodape> {
           if (!isMobile)
             Container(
               width: 260,
-              color: const Color(0xFFB3E5FC),
+              color: AppColors.primary,
               child: _menuContent(isDrawer: false),
             ),
           Expanded(
@@ -84,12 +88,12 @@ class _MenuRodapeState extends State<MenuRodape> {
                       horizontal: 16,
                       vertical: 20,
                     ),
-                    color: const Color(0xFFB3E5FC),
+                    color: AppColors.primary,
                     child: Text(
                       pageTitles[_op],
                       style: const TextStyle(
                         fontSize: 24,
-                        color: Colors.black87,
+                        color: AppColors.invertedText,
                       ),
                     ),
                   ),
@@ -108,16 +112,21 @@ class _MenuRodapeState extends State<MenuRodape> {
   Widget _menuContent({required bool isDrawer}) {
     return ListView(
       children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
+        Padding(
+          padding: const EdgeInsets.all(16),
           child: Text(
             'Elifone',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: isDrawer ? AppColors.primary : AppColors.invertedText,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         _menuItem(Icons.home, 'Home', 0, isDrawer),
         _menuItem(Icons.calendar_month, 'Agenda', 1, isDrawer),
         _menuItem(Icons.inventory_2, 'Gerenciamento de Estoque', 2, isDrawer),
+        _menuItem(Icons.request_quote, 'Orcamentos', 3, isDrawer),
       ],
     );
   }
@@ -130,18 +139,26 @@ class _MenuRodapeState extends State<MenuRodape> {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
-            color: selecionado ? const Color(0xFFE8F1FF) : Colors.transparent,
+            color: selecionado ? AppColors.surfaceAlt : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: ListTile(
             leading: Icon(
               icon,
-              color: selecionado ? const Color(0xFF0D47A1) : null,
+              color: selecionado
+                  ? AppColors.primary
+                  : isDrawer
+                  ? AppColors.secondary
+                  : AppColors.invertedText,
             ),
             title: Text(
               title,
               style: TextStyle(
-                color: selecionado ? const Color(0xFF0D47A1) : null,
+                color: selecionado
+                    ? AppColors.primary
+                    : isDrawer
+                    ? AppColors.secondary
+                    : AppColors.invertedText,
                 fontWeight: selecionado ? FontWeight.w700 : FontWeight.normal,
               ),
             ),
