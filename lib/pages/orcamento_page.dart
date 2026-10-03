@@ -1,11 +1,15 @@
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:projeto_elifone/model/material_model.dart';
 import 'package:projeto_elifone/model/orcamento_model.dart';
+import 'package:projeto_elifone/services/supabase_material_service.dart';
+import 'package:projeto_elifone/services/supabase_orcamento_config_service.dart';
+import 'package:projeto_elifone/services/supabase_orcamento_service.dart';
 import 'package:projeto_elifone/theme/app_theme.dart';
+import 'package:printing/printing.dart';
 
 class OrcamentoPage extends StatefulWidget {
   const OrcamentoPage({super.key});
@@ -15,33 +19,26 @@ class OrcamentoPage extends StatefulWidget {
 }
 
 class _OrcamentoPageState extends State<OrcamentoPage> {
+  final orcamentoService = SupabaseOrcamentoService();
+  final orcamentoConfigService = SupabaseOrcamentoConfigService();
+  final materialService = SupabaseMaterialService();
+
   final clienteController = TextEditingController();
-  final observacoesController = TextEditingController(
-    text: 'Notas para o financeiro ou condicoes especiais.',
-  );
+  final observacoesController = TextEditingController();
   final textoPadraoController = TextEditingController(
     text:
         'Prezado cliente, segue a proposta comercial solicitada. Os valores apresentados consideram as informacoes disponiveis ate a data de emissao deste documento.',
   );
 
-  final List<OrcamentoItemModel> itens = [
-    const OrcamentoItemModel(
-      descricao: 'Licenca de software',
-      quantidade: 1,
-      precoUnitario: 1200,
-    ),
-    const OrcamentoItemModel(
-      descricao: 'Implementacao',
-      quantidade: 5,
-      precoUnitario: 150,
-    ),
-  ];
-
-  final List<OrcamentoModel> historico = [];
+  List<OrcamentoItemModel> itens = [];
+  List<OrcamentoModel> historico = [];
+  List<MaterialModel> materiais = [];
+  bool loading = true;
+  bool salvando = false;
+  bool possuiValidade = false;
   late DateTime validade;
-  String pagamento = 'A vista (PIX/Dinheiro)';
   int aba = 0;
-  int contador = 1;
+  String? aviso;
   OrcamentoLayoutModel layout = const OrcamentoLayoutModel(
     textoPadrao:
         'Prezado cliente, segue a proposta comercial solicitada. Os valores apresentados consideram as informacoes disponiveis ate a data de emissao deste documento.',
@@ -51,6 +48,7 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
   void initState() {
     super.initState();
     validade = DateTime.now().add(const Duration(days: 15));
+    carregarDados();
   }
 
   @override
@@ -61,33 +59,73 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     super.dispose();
   }
 
-  double get subtotal => itens.fold(0, (total, item) => total + item.total);
-  double get total => subtotal;
+  num get subtotal => itens.fold<num>(0, (total, item) => total + item.total);
+
+  Future<void> carregarDados() async {
+    setState(() {
+      loading = true;
+      aviso = null;
+    });
+
+    try {
+      final data = await Future.wait([
+        materialService.listar(),
+        orcamentoService.listar(),
+        orcamentoConfigService.buscar(),
+      ]);
+
+      if (!mounted) return;
+      final config = data[2] as OrcamentoLayoutModel?;
+      setState(() {
+        materiais = data[0] as List<MaterialModel>;
+        historico = data[1] as List<OrcamentoModel>;
+        if (config != null) {
+          layout = config;
+          textoPadraoController.text = config.textoPadrao;
+        }
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        aviso =
+            'Nao foi possivel carregar materiais ou historico de orcamentos.';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 18),
-            _buildTabs(),
-            const SizedBox(height: 18),
-            IndexedStack(
-              index: aba,
-              children: [
-                _buildGerarOrcamento(),
-                _buildHistorico(),
-                _buildConfiguracoes(),
-              ],
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: carregarDados,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 18),
+                    if (aviso != null) _AvisoBox(text: aviso!),
+                    _buildTabs(),
+                    const SizedBox(height: 18),
+                    IndexedStack(
+                      index: aba,
+                      children: [
+                        _buildGerarOrcamento(),
+                        _buildHistorico(),
+                        _buildConfiguracoes(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -95,7 +133,6 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 760;
-
         return Flex(
           direction: compact ? Axis.vertical : Axis.horizontal,
           crossAxisAlignment: compact
@@ -116,7 +153,7 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Gere PDFs, acompanhe o historico e ajuste o layout.',
+                  'Gere PDFs, consulte o historico e ajuste o layout.',
                   style: TextStyle(color: AppColors.mutedText),
                 ),
               ],
@@ -134,7 +171,7 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
                 _MetricPill(
                   icon: Icons.payments_outlined,
                   label: 'Gerado',
-                  value: _money(historico.fold(0, (v, o) => v + o.total)),
+                  value: _money(historico.fold<num>(0, (v, o) => v + o.total)),
                 ),
               ],
             ),
@@ -176,7 +213,6 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 1050;
-
         final form = Column(
           children: [
             _Panel(
@@ -195,9 +231,15 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
                   const SizedBox(height: 14),
                   Row(
                     children: [
-                      Expanded(child: _dateButton()),
+                      Expanded(
+                        child: _InfoField(
+                          label: 'Data de Emissao',
+                          value: _date(DateTime.now()),
+                          icon: Icons.event_available_outlined,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _paymentField()),
+                      Expanded(child: _validadeControl()),
                     ],
                   ),
                 ],
@@ -233,16 +275,15 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
           children: [
             _TotalBox(
               subtotal: subtotal,
-              total: total,
-              onGenerate: _gerarOrcamento,
+              onGenerate: salvando ? null : _gerarOrcamento,
               onPreview: () => _abrirPreview(_previewAtual()),
             ),
             const SizedBox(height: 14),
-            _HintBox(
+            const _HintBox(
               icon: Icons.info_outline,
-              title: 'Dica de validade',
+              title: 'Itens sem saida de estoque',
               text:
-                  'Orcamentos com validade superior a 15 dias tendem a ter taxas de conversao menores. Ajuste a data conforme a proposta.',
+                  'Materiais selecionados entram no orcamento, mas nao geram baixa no estoque.',
             ),
           ],
         );
@@ -276,8 +317,46 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     );
   }
 
+  Widget _validadeControl() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            value: possuiValidade,
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'Orcamento com validade',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+            onChanged: (value) => setState(() => possuiValidade = value),
+          ),
+          if (possuiValidade)
+            OutlinedButton.icon(
+              onPressed: () async {
+                final selected = await showDatePicker(
+                  context: context,
+                  initialDate: validade,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(DateTime.now().year + 5),
+                );
+                if (selected != null) setState(() => validade = selected);
+              },
+              icon: const Icon(Icons.calendar_today_outlined, size: 18),
+              label: Text(_date(validade)),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHistorico() {
-    final totalGerado = historico.fold<double>(0, (v, o) => v + o.total);
+    final totalGerado = historico.fold<num>(0, (v, o) => v + o.total);
 
     return Column(
       children: [
@@ -286,7 +365,6 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
             final columns = constraints.maxWidth >= 900 ? 3 : 1;
             final width =
                 (constraints.maxWidth - ((columns - 1) * 12)) / columns;
-
             return Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -296,17 +374,8 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
                   child: _MetricCard(
                     title: 'Total de Orcamentos',
                     value: historico.length.toString(),
-                    detail: 'registros gerados',
+                    detail: 'registros no sistema',
                     icon: Icons.description_outlined,
-                  ),
-                ),
-                SizedBox(
-                  width: width,
-                  child: const _MetricCard(
-                    title: 'Taxa de Aprovacao',
-                    value: '0%',
-                    detail: 'controle inicial',
-                    icon: Icons.verified_outlined,
                   ),
                 ),
                 SizedBox(
@@ -318,6 +387,19 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
                     icon: Icons.account_balance_wallet_outlined,
                   ),
                 ),
+                SizedBox(
+                  width: width,
+                  child: _MetricCard(
+                    title: 'Ultimo Orcamento',
+                    value: historico.isEmpty
+                        ? '---'
+                        : _date(historico.first.createdAt),
+                    detail: historico.isEmpty
+                        ? 'sem registros'
+                        : historico.first.cliente,
+                    icon: Icons.schedule_outlined,
+                  ),
+                ),
               ],
             );
           },
@@ -326,10 +408,7 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
         _Panel(
           title: 'Listagem de Orcamentos',
           child: historico.isEmpty
-              ? const _EmptyState(
-                  message:
-                      'Nenhum orcamento gerado ainda. Gere o primeiro PDF para ele aparecer aqui.',
-                )
+              ? const _EmptyState(message: 'Nenhum orcamento encontrado.')
               : _historicoTable(),
         ),
       ],
@@ -400,14 +479,7 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
                 runSpacing: 10,
                 children: [
                   FilledButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        layout = layout.copyWith(
-                          textoPadrao: textoPadraoController.text,
-                        );
-                      });
-                      _showMessage('Alteracoes aplicadas ao preview.');
-                    },
+                    onPressed: _salvarConfiguracoes,
                     icon: const Icon(Icons.save_outlined, size: 18),
                     label: const Text('Salvar Alteracoes'),
                   ),
@@ -426,7 +498,6 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
           orcamento: _previewAtual(),
           compact: false,
         );
-
         if (compact) {
           return Column(children: [form, const SizedBox(height: 14), preview]);
         }
@@ -447,22 +518,32 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
+        headingRowColor: WidgetStateProperty.all(AppColors.surfaceAlt),
+        headingTextStyle: const TextStyle(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w900,
+        ),
+        dataTextStyle: const TextStyle(color: AppColors.text),
         columnSpacing: 28,
         columns: const [
-          DataColumn(label: Text('ID Orcamento')),
-          DataColumn(label: Text('Nome do Cliente')),
-          DataColumn(label: Text('Data')),
-          DataColumn(label: Text('Status')),
+          DataColumn(label: Text('Orcamento')),
+          DataColumn(label: Text('Data de Emissao')),
+          DataColumn(label: Text('Validade')),
           DataColumn(numeric: true, label: Text('Valor Total')),
           DataColumn(label: Text('Acoes')),
         ],
         rows: historico.map((orcamento) {
           return DataRow(
             cells: [
-              DataCell(Text(orcamento.id)),
-              DataCell(Text(orcamento.cliente)),
-              DataCell(Text(_date(orcamento.criadoEm))),
-              const DataCell(_StatusBadge(label: 'Gerado')),
+              DataCell(Text('${orcamento.codigo} (${orcamento.cliente})')),
+              DataCell(Text(_date(orcamento.dataEmissao))),
+              DataCell(
+                Text(
+                  orcamento.possuiValidade && orcamento.validade != null
+                      ? _date(orcamento.validade!)
+                      : 'Sem validade',
+                ),
+              ),
               DataCell(Text(_money(orcamento.total))),
               DataCell(
                 Row(
@@ -489,11 +570,20 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
   }
 
   Widget _itemsTable({required bool showActions}) {
+    if (itens.isEmpty) {
+      return const _EmptyState(message: 'Nenhum item adicionado ao orcamento.');
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        columnSpacing: 22,
         headingRowColor: WidgetStateProperty.all(AppColors.surfaceAlt),
+        headingTextStyle: const TextStyle(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w900,
+        ),
+        dataTextStyle: const TextStyle(color: AppColors.text),
+        columnSpacing: 22,
         columns: [
           const DataColumn(label: Text('Descricao do Item')),
           const DataColumn(numeric: true, label: Text('Qtd.')),
@@ -505,14 +595,18 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
           return DataRow(
             cells: [
               DataCell(Text(item.descricao)),
-              DataCell(Text(item.quantidade.toString())),
-              DataCell(Text(_money(item.precoUnitario))),
+              DataCell(Text(_quantity(item.quantidade))),
+              DataCell(Text(_money(item.valorUnitario))),
               DataCell(Text(_money(item.total))),
               if (showActions)
                 DataCell(
                   IconButton(
                     tooltip: 'Remover item',
-                    onPressed: () => setState(() => itens.remove(item)),
+                    onPressed: () => setState(
+                      () => itens = itens
+                          .where((value) => value != item)
+                          .toList(),
+                    ),
                     icon: const Icon(Icons.delete_outline),
                   ),
                 ),
@@ -523,54 +617,15 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     );
   }
 
-  Widget _dateButton() {
-    return OutlinedButton.icon(
-      onPressed: () async {
-        final selected = await showDatePicker(
-          context: context,
-          initialDate: validade,
-          firstDate: DateTime.now(),
-          lastDate: DateTime(DateTime.now().year + 5),
-        );
-        if (selected != null) setState(() => validade = selected);
-      },
-      icon: const Icon(Icons.calendar_today_outlined, size: 18),
-      label: Text(_date(validade)),
-      style: OutlinedButton.styleFrom(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      ),
-    );
-  }
-
-  Widget _paymentField() {
-    return DropdownButtonFormField<String>(
-      initialValue: pagamento,
-      decoration: _decoration('Condicao de pagamento'),
-      items: const [
-        DropdownMenuItem(
-          value: 'A vista (PIX/Dinheiro)',
-          child: Text('A vista (PIX/Dinheiro)'),
-        ),
-        DropdownMenuItem(value: 'Cartao de credito', child: Text('Cartao')),
-        DropdownMenuItem(
-          value: 'Boleto 15 dias',
-          child: Text('Boleto 15 dias'),
-        ),
-        DropdownMenuItem(value: 'Parcelado', child: Text('Parcelado')),
-      ],
-      onChanged: (value) {
-        if (value != null) setState(() => pagamento = value);
-      },
-    );
-  }
-
-  void _abrirModalItem() {
-    showDialog<void>(
+  Future<void> _abrirModalItem() async {
+    final item = await showDialog<OrcamentoItemModel>(
       context: context,
-      builder: (_) =>
-          _NovoItemDialog(onSave: (item) => setState(() => itens.add(item))),
+      builder: (_) => _ItemOrcamentoModal(materiais: materiais),
     );
+
+    if (item != null) {
+      setState(() => itens = [...itens, item]);
+    }
   }
 
   Future<void> _selecionarImagem({required bool isHeader}) async {
@@ -588,61 +643,92 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     });
   }
 
+  Future<void> _salvarConfiguracoes() async {
+    final novoLayout = layout.copyWith(textoPadrao: textoPadraoController.text);
+    try {
+      final salvo = await orcamentoConfigService.salvar(novoLayout);
+      if (!mounted) return;
+      setState(() {
+        layout = salvo;
+        textoPadraoController.text = salvo.textoPadrao;
+      });
+      _showMessage('Configuracoes do orcamento salvas.');
+    } catch (error) {
+      debugPrint('Erro ao salvar configuracoes do orcamento: $error');
+      _showMessage('Erro ao salvar configuracoes: ${_erroCurto(error)}');
+    }
+  }
+
   Future<void> _gerarOrcamento() async {
     if (clienteController.text.trim().isEmpty || itens.isEmpty) {
       _showMessage('Preencha o cliente e adicione ao menos um item.');
       return;
     }
 
-    final orcamentoSemPdf = _previewAtual(
-      id: '#ORC-${DateTime.now().year}-${contador.toString().padLeft(3, '0')}',
-      criadoEm: DateTime.now(),
-    );
-    final pdfBytes = await _buildPdf(orcamentoSemPdf);
-    final orcamento = OrcamentoModel(
-      id: orcamentoSemPdf.id,
-      cliente: orcamentoSemPdf.cliente,
-      validade: orcamentoSemPdf.validade,
-      pagamento: orcamentoSemPdf.pagamento,
-      criadoEm: orcamentoSemPdf.criadoEm,
-      itens: orcamentoSemPdf.itens,
-      observacoes: orcamentoSemPdf.observacoes,
-      layout: orcamentoSemPdf.layout,
-      pdfBytes: pdfBytes,
+    setState(() => salvando = true);
+    final orcamento = _previewAtual(
+      codigo: 'ORC-${DateTime.now().millisecondsSinceEpoch}',
+      createdAt: DateTime.now(),
     );
 
-    setState(() {
-      historico.insert(0, orcamento);
-      contador++;
-      aba = 1;
-    });
+    OrcamentoModel salvo;
+    try {
+      salvo = await orcamentoService.inserir(orcamento);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => salvando = false);
+      debugPrint('Erro ao salvar orcamento: $error');
+      _showMessage('Erro ao salvar no banco: ${_erroCurto(error)}');
+      return;
+    }
 
-    await _baixarPdf(orcamento);
+    try {
+      final atualizado = await orcamentoService.listar();
+      if (!mounted) return;
+      setState(() {
+        historico = atualizado;
+        aba = 1;
+        salvando = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        historico = [salvo, ...historico];
+        aba = 1;
+        salvando = false;
+      });
+    }
+
+    try {
+      await _baixarPdf(orcamento);
+    } catch (_) {
+      _showMessage('Orcamento salvo, mas nao foi possivel baixar o PDF.');
+    }
   }
 
-  OrcamentoModel _previewAtual({String? id, DateTime? criadoEm}) {
+  OrcamentoModel _previewAtual({String? codigo, DateTime? createdAt}) {
     return OrcamentoModel(
-      id: id ?? '#ORC-PREVIEW',
+      codigo: codigo ?? 'PREVIEW',
       cliente: clienteController.text.trim().isEmpty
           ? 'Nome do Cliente'
           : clienteController.text.trim(),
-      validade: validade,
-      pagamento: pagamento,
-      criadoEm: criadoEm ?? DateTime.now(),
+      dataEmissao: DateTime.now(),
+      possuiValidade: possuiValidade,
+      validade: possuiValidade ? validade : null,
+      createdAt: createdAt ?? DateTime.now(),
       itens: List.unmodifiable(itens),
       observacoes: observacoesController.text,
       layout: layout.copyWith(textoPadrao: textoPadraoController.text),
-      pdfBytes: Uint8List(0),
     );
   }
 
   Future<void> _baixarPdf(OrcamentoModel orcamento) async {
-    final bytes = orcamento.pdfBytes.isEmpty
-        ? await _buildPdf(orcamento)
-        : orcamento.pdfBytes;
+    final bytes = await _buildPdf(orcamento);
+    final filename =
+        '${orcamento.codigo}_${_safeFileName(orcamento.cliente)}.pdf';
     final path = await FilePicker.saveFile(
       dialogTitle: 'Salvar orcamento em PDF',
-      fileName: '${orcamento.id.replaceAll('#', '')}.pdf',
+      fileName: filename,
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       bytes: bytes,
@@ -653,125 +739,94 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
 
   Future<Uint8List> _buildPdf(OrcamentoModel orcamento) async {
     final doc = pw.Document();
-    final headerImage = orcamento.layout.cabecalho == null
-        ? null
-        : pw.MemoryImage(orcamento.layout.cabecalho!);
-    final footerImage = orcamento.layout.rodape == null
-        ? null
-        : pw.MemoryImage(orcamento.layout.rodape!);
+    final cabecalho = orcamento.layout.cabecalho ?? layout.cabecalho;
+    final rodape = orcamento.layout.rodape ?? layout.rodape;
+    final headerImage = cabecalho == null ? null : pw.MemoryImage(cabecalho);
+    final footerImage = rodape == null ? null : pw.MemoryImage(rodape);
 
     doc.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(36),
+        margin: pw.EdgeInsets.zero,
         build: (context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              if (headerImage != null)
-                pw.Container(
-                  height: 82,
-                  width: double.infinity,
-                  margin: const pw.EdgeInsets.only(bottom: 20),
-                  child: pw.Image(headerImage, fit: pw.BoxFit.contain),
-                )
-              else
-                pw.Container(
-                  height: 58,
-                  width: double.infinity,
-                  alignment: pw.Alignment.centerLeft,
-                  margin: const pw.EdgeInsets.only(bottom: 20),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300),
-                  ),
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 14),
-                  child: pw.Text(
-                    'ELIFONE',
-                    style: pw.TextStyle(
-                      fontSize: 20,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'ORCAMENTO ${orcamento.id}',
-                    style: pw.TextStyle(
-                      fontSize: 18,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text('Data: ${_date(orcamento.criadoEm)}'),
-                ],
-              ),
-              pw.SizedBox(height: 12),
-              pw.Text('Cliente: ${orcamento.cliente}'),
-              pw.Text('Validade: ${_date(orcamento.validade)}'),
-              pw.Text('Pagamento: ${orcamento.pagamento}'),
-              pw.SizedBox(height: 18),
-              pw.Text(orcamento.layout.textoPadrao),
-              pw.SizedBox(height: 18),
-              pw.TableHelper.fromTextArray(
-                headers: ['Descricao', 'Qtd.', 'Unitario', 'Total'],
-                data: orcamento.itens
-                    .map(
-                      (item) => [
-                        item.descricao,
-                        item.quantidade.toString(),
-                        _money(item.precoUnitario),
-                        _money(item.total),
-                      ],
-                    )
-                    .toList(),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                headerDecoration: const pw.BoxDecoration(
-                  color: PdfColors.grey300,
-                ),
-                cellAlignment: pw.Alignment.centerLeft,
-                cellAlignments: {
-                  1: pw.Alignment.centerRight,
-                  2: pw.Alignment.centerRight,
-                  3: pw.Alignment.centerRight,
-                },
-              ),
-              pw.SizedBox(height: 16),
-              pw.Align(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Text('Subtotal: ${_money(orcamento.subtotal)}'),
-                    pw.Text('Impostos: ${_money(orcamento.impostos)}'),
-                    pw.Text('Desconto: ${_money(orcamento.desconto)}'),
-                    pw.SizedBox(height: 6),
-                    pw.Text(
-                      'Total: ${_money(orcamento.total)}',
-                      style: pw.TextStyle(
-                        fontSize: 16,
-                        fontWeight: pw.FontWeight.bold,
+              _pdfImageBand(headerImage, height: 200, fallback: 'ELIFONE'),
+              pw.Expanded(
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.fromLTRB(36, 24, 36, 20),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Center(
+                        child: pw.Text(
+                          'Orçamento Elifone - ${orcamento.cliente}',
+                          style: pw.TextStyle(
+                            fontSize: 20,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      pw.SizedBox(height: 12),
+                      pw.Text(
+                        'Data de emissao: ${_date(orcamento.dataEmissao)}',
+                      ),
+                      if (orcamento.possuiValidade &&
+                          orcamento.validade != null)
+                        pw.Text('Validade: ${_date(orcamento.validade!)}'),
+                      pw.SizedBox(height: 18),
+                      pw.Text(orcamento.layout.textoPadrao),
+                      pw.SizedBox(height: 18),
+                      pw.TableHelper.fromTextArray(
+                        headers: ['Descricao', 'Qtd.', 'Unitario', 'Total'],
+                        data: orcamento.itens
+                            .map(
+                              (item) => [
+                                item.descricao,
+                                _quantity(item.quantidade),
+                                _money(item.valorUnitario),
+                                _money(item.total),
+                              ],
+                            )
+                            .toList(),
+                        headerStyle: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        headerDecoration: const pw.BoxDecoration(
+                          color: PdfColors.grey300,
+                        ),
+                        cellAlignment: pw.Alignment.centerLeft,
+                        cellAlignments: {
+                          1: pw.Alignment.centerRight,
+                          2: pw.Alignment.centerRight,
+                          3: pw.Alignment.centerRight,
+                        },
+                      ),
+                      pw.SizedBox(height: 16),
+                      pw.Align(
+                        alignment: pw.Alignment.centerRight,
+                        child: pw.Text(
+                          'Total: ${_money(orcamento.total)}',
+                          style: pw.TextStyle(
+                            fontSize: 16,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (orcamento.observacoes.trim().isNotEmpty) ...[
+                        pw.SizedBox(height: 16),
+                        pw.Text('Observacoes: ${orcamento.observacoes}'),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-              if (orcamento.observacoes.trim().isNotEmpty) ...[
-                pw.SizedBox(height: 16),
-                pw.Text('Observacoes: ${orcamento.observacoes}'),
-              ],
-              pw.Spacer(),
-              if (footerImage != null)
-                pw.SizedBox(
-                  height: 64,
-                  width: double.infinity,
-                  child: pw.Image(footerImage, fit: pw.BoxFit.contain),
-                )
-              else
-                pw.Text(
-                  'Documento gerado pelo sistema Elifone.',
-                  style: const pw.TextStyle(color: PdfColors.grey600),
-                ),
+              _pdfImageBand(
+                footerImage,
+                height: 90,
+                fallback: 'Documento gerado pelo sistema Elifone',
+              ),
             ],
           );
         },
@@ -781,15 +836,73 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
     return doc.save();
   }
 
+  pw.Widget _pdfImageBand(
+    pw.ImageProvider? image, {
+    required double height,
+    required String fallback,
+  }) {
+    if (image == null) {
+      return pw.Container(
+        width: double.infinity,
+        height: height,
+        alignment: pw.Alignment.center,
+        color: PdfColors.grey200,
+        child: pw.Text(fallback),
+      );
+    }
+
+    return pw.ClipRect(
+      child: pw.SizedBox(
+        width: double.infinity,
+        height: height,
+        child: pw.Image(
+          image,
+          fit: pw.BoxFit.fitWidth,
+          alignment: pw.Alignment.center,
+        ),
+      ),
+    );
+  }
+
   void _abrirPreview(OrcamentoModel orcamento) {
     showDialog<void>(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.surface,
         insetPadding: const EdgeInsets.all(18),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: _PreviewPanel(orcamento: orcamento, compact: false),
+        child: SizedBox(
+          width: 860,
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Preview do PDF',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Fechar',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: _PdfFilePreview(buildPdf: () => _buildPdf(orcamento)),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -812,97 +925,235 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
   }
 }
 
-class _NovoItemDialog extends StatefulWidget {
-  final ValueChanged<OrcamentoItemModel> onSave;
+class _ItemOrcamentoModal extends StatefulWidget {
+  final List<MaterialModel> materiais;
 
-  const _NovoItemDialog({required this.onSave});
+  const _ItemOrcamentoModal({required this.materiais});
 
   @override
-  State<_NovoItemDialog> createState() => _NovoItemDialogState();
+  State<_ItemOrcamentoModal> createState() => _ItemOrcamentoModalState();
 }
 
-class _NovoItemDialogState extends State<_NovoItemDialog> {
+class _ItemOrcamentoModalState extends State<_ItemOrcamentoModal> {
   final descricaoController = TextEditingController();
   final quantidadeController = TextEditingController(text: '1');
-  final precoController = TextEditingController();
+  final valorController = TextEditingController(text: '0');
+  MaterialModel? materialSelecionado;
+  bool usarMaterial = true;
 
   @override
   void dispose() {
     descricaoController.dispose();
     quantidadeController.dispose();
-    precoController.dispose();
+    valorController.dispose();
     super.dispose();
+  }
+
+  void salvar() {
+    final descricao = usarMaterial
+        ? materialSelecionado?.nome ?? ''
+        : descricaoController.text.trim();
+    final quantidade =
+        num.tryParse(quantidadeController.text.replaceAll(',', '.')) ?? 1;
+    final valorUnitario = usarMaterial
+        ? materialSelecionado?.valor ?? 0
+        : num.tryParse(valorController.text.replaceAll(',', '.')) ?? 0;
+
+    if (descricao.isEmpty || quantidade <= 0) return;
+
+    Navigator.pop(
+      context,
+      OrcamentoItemModel(
+        idMaterial: usarMaterial ? materialSelecionado?.id : null,
+        descricao: descricao,
+        quantidade: quantidade,
+        valorUnitario: valorUnitario,
+        material: usarMaterial,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Adicionar Item'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: descricaoController,
-              decoration: _decoration('Descricao'),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: quantidadeController,
-                    keyboardType: TextInputType.number,
-                    decoration: _decoration('Quantidade'),
-                  ),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 14, 16),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Adicionar Item',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: precoController,
-                    keyboardType: TextInputType.number,
-                    decoration: _decoration('Preco unitario'),
-                  ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      value: usarMaterial,
+                      onChanged: (value) {
+                        setState(() {
+                          usarMaterial = value ?? false;
+                          if (!usarMaterial) {
+                            materialSelecionado = null;
+                            valorController.text = '0';
+                          }
+                        });
+                      },
+                      title: const Text('Este item e material do estoque'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    const SizedBox(height: 12),
+                    if (usarMaterial) ...[
+                      _label('Material do estoque'),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<MaterialModel>(
+                        initialValue: materialSelecionado,
+                        decoration: _decoration('Selecione o material'),
+                        items: widget.materiais
+                            .map(
+                              (material) => DropdownMenuItem(
+                                value: material,
+                                child: Text(
+                                  '${material.nome} - ${_money(material.valor)}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() => materialSelecionado = value);
+                        },
+                      ),
+                      if (materialSelecionado != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Preco unitario: ${_money(materialSelecionado!.valor)}',
+                            style: const TextStyle(
+                              color: AppColors.secondary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ] else ...[
+                      _label('Descricao do item'),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: descricaoController,
+                        decoration: _decoration('Descricao'),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compacto = constraints.maxWidth < 420;
+                        final quantidadeField = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _label('Quantidade'),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: quantidadeController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: _decoration('Ex: 1'),
+                            ),
+                          ],
+                        );
+
+                        if (usarMaterial) return quantidadeField;
+
+                        final valorField = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _label('Valor unitario'),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: valorController,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: _decoration('Ex: 85,00'),
+                            ),
+                          ],
+                        );
+
+                        if (compacto) {
+                          return Column(
+                            children: [
+                              quantidadeField,
+                              const SizedBox(height: 12),
+                              valorField,
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: quantidadeField),
+                            const SizedBox(width: 10),
+                            Expanded(child: valorField),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancelar'),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: salvar,
+                      child: const Text('Salvar'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      actions: [
-        OutlinedButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(onPressed: _salvar, child: const Text('Adicionar')),
-      ],
     );
-  }
-
-  void _salvar() {
-    final descricao = descricaoController.text.trim();
-    final quantidade = int.tryParse(quantidadeController.text) ?? 0;
-    final preco =
-        double.tryParse(precoController.text.replaceAll(',', '.')) ?? 0;
-
-    if (descricao.isEmpty || quantidade <= 0 || preco <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preencha descricao, quantidade e preco.'),
-        ),
-      );
-      return;
-    }
-
-    widget.onSave(
-      OrcamentoItemModel(
-        descricao: descricao,
-        quantidade: quantidade,
-        precoUnitario: preco,
-      ),
-    );
-    Navigator.pop(context);
   }
 }
 
@@ -937,107 +1188,117 @@ class _PreviewPanel extends StatelessWidget {
           AspectRatio(
             aspectRatio: 0.72,
             child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
+              color: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _ImagePreviewSlot(
                     bytes: orcamento.layout.cabecalho,
                     fallback: 'ELIFONE',
-                    height: compact ? 42 : 56,
+                    height: compact ? 42 : 60,
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'ORCAMENTO ${orcamento.id}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        _money(orcamento.total),
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 20),
-                  Text(
-                    orcamento.cliente,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    orcamento.layout.textoPadrao,
-                    maxLines: compact ? 3 : 5,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.mutedText,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...orcamento.itens
-                      .take(4)
-                      .map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Expanded(
+                              const Expanded(
                                 child: Text(
-                                  item.descricao,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 11),
+                                  'ORCAMENTO',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
                               Text(
-                                _money(item.total),
+                                _money(orcamento.total),
                                 style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
                             ],
                           ),
-                        ),
+                          const Divider(height: 20),
+                          Text(
+                            orcamento.cliente,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Emissao: ${_date(orcamento.dataEmissao)}',
+                            style: const TextStyle(
+                              color: AppColors.mutedText,
+                              fontSize: 11,
+                            ),
+                          ),
+                          if (orcamento.possuiValidade &&
+                              orcamento.validade != null)
+                            Text(
+                              'Validade: ${_date(orcamento.validade!)}',
+                              style: const TextStyle(
+                                color: AppColors.mutedText,
+                                fontSize: 11,
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          Text(
+                            orcamento.layout.textoPadrao,
+                            maxLines: compact ? 3 : 5,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.mutedText,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...orcamento.itens
+                              .take(4)
+                              .map(
+                                (item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.descricao,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 11),
+                                        ),
+                                      ),
+                                      Text(
+                                        _money(item.total),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          const Spacer(),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'TOTAL ${_money(orcamento.total)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        'TOTAL ${_money(orcamento.total)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
                   _ImagePreviewSlot(
                     bytes: orcamento.layout.rodape,
                     fallback: 'Documento gerado pelo sistema Elifone',
@@ -1050,6 +1311,60 @@ class _PreviewPanel extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _PdfFilePreview extends StatelessWidget {
+  final Future<Uint8List> Function() buildPdf;
+
+  const _PdfFilePreview({required this.buildPdf});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List>(
+      future: _renderFirstPage(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError || snapshot.data == null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Nao foi possivel renderizar o PDF para preview.\n${snapshot.error ?? ''}',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        return Container(
+          color: const Color(0xFFE5E7EB),
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Image.memory(snapshot.data!, fit: BoxFit.contain),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<Uint8List> _renderFirstPage() async {
+    final pdfBytes = await buildPdf();
+    final page = await Printing.raster(
+      pdfBytes,
+      pages: const [0],
+      dpi: 144,
+    ).first;
+    return page.toPng();
   }
 }
 
@@ -1097,14 +1412,12 @@ class _Panel extends StatelessWidget {
 }
 
 class _TotalBox extends StatelessWidget {
-  final double subtotal;
-  final double total;
-  final VoidCallback onGenerate;
+  final num subtotal;
+  final VoidCallback? onGenerate;
   final VoidCallback onPreview;
 
   const _TotalBox({
     required this.subtotal,
-    required this.total,
     required this.onGenerate,
     required this.onPreview,
   });
@@ -1131,17 +1444,13 @@ class _TotalBox extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _money(total),
+            _money(subtotal),
             style: const TextStyle(
               color: AppColors.invertedText,
               fontSize: 28,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const Divider(height: 26, color: AppColors.secondary),
-          _totalLine('Subtotal', subtotal),
-          _totalLine('Impostos', 0),
-          _totalLine('Desconto', 0),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: onGenerate,
@@ -1166,23 +1475,50 @@ class _TotalBox extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _totalLine(String label, double value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+class _InfoField extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _InfoField({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 68,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        border: Border.all(color: AppColors.border),
+      ),
       child: Row(
         children: [
+          Icon(icon, size: 20),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: AppColors.invertedText),
-            ),
-          ),
-          Text(
-            _money(value),
-            style: const TextStyle(
-              color: AppColors.invertedText,
-              fontWeight: FontWeight.w800,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.mutedText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ],
             ),
           ),
         ],
@@ -1298,7 +1634,7 @@ class _ImagePreviewSlot extends StatelessWidget {
                 ),
               ),
             )
-          : Image.memory(bytes!, fit: BoxFit.contain),
+          : Image.memory(bytes!, fit: BoxFit.fitWidth),
     );
   }
 }
@@ -1458,25 +1794,27 @@ class _HintBox extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String label;
+class _AvisoBox extends StatelessWidget {
+  final String text;
 
-  const _StatusBadge({required this.label});
+  const _AvisoBox({required this.text});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(4),
+        color: AppColors.warning.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.24)),
       ),
       child: Text(
-        label.toUpperCase(),
+        text,
         style: const TextStyle(
-          color: AppColors.success,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
+          color: AppColors.warning,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -1531,9 +1869,7 @@ String _money(num value) {
   for (var i = 0; i < parts.first.length; i++) {
     final positionFromEnd = parts.first.length - i;
     buffer.write(parts.first[i]);
-    if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-      buffer.write('.');
-    }
+    if (positionFromEnd > 1 && positionFromEnd % 3 == 1) buffer.write('.');
   }
   return 'R\$ ${buffer.toString()},${parts.last}';
 }
@@ -1542,4 +1878,22 @@ String _date(DateTime value) {
   final day = value.day.toString().padLeft(2, '0');
   final month = value.month.toString().padLeft(2, '0');
   return '$day/$month/${value.year}';
+}
+
+String _quantity(num value) {
+  if (value % 1 == 0) return value.toInt().toString();
+  return value.toStringAsFixed(2).replaceAll('.', ',');
+}
+
+String _safeFileName(String value) {
+  return value
+      .replaceAll(RegExp(r'[\\/:*?"<>|]'), '_')
+      .replaceAll(RegExp(r'\s+'), '_')
+      .toLowerCase();
+}
+
+String _erroCurto(Object error) {
+  final text = error.toString();
+  if (text.length <= 220) return text;
+  return '${text.substring(0, 220)}...';
 }

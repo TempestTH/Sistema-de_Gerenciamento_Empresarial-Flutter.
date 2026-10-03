@@ -9,32 +9,32 @@ class AppController extends ChangeNotifier {
   bool JanelasFlutuantes = false;
   bool TelaBloqueio = false;
   bool teste = false;
-  changeNotificacao() {
+  void changeNotificacao() {
     Notificacao = !Notificacao;
     notifyListeners();
   }
 
-  changeLembrete() {
+  void changeLembrete() {
     Lembrete = !Lembrete;
     notifyListeners();
   }
 
-  changeatvdExt() {
+  void changeatvdExt() {
     atvdExt = !atvdExt;
     notifyListeners();
   }
 
-  changeJanelasFlutuantes() {
+  void changeJanelasFlutuantes() {
     JanelasFlutuantes = !JanelasFlutuantes;
     notifyListeners();
   }
 
-  changeTelaBloqueio() {
+  void changeTelaBloqueio() {
     TelaBloqueio = !TelaBloqueio;
     notifyListeners();
   }
 
-  changeTheme() {
+  void changeTheme() {
     teste = !teste;
     notifyListeners();
   }
