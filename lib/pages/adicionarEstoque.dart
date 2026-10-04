@@ -494,13 +494,25 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
           const SizedBox(height: 8),
           DropdownButtonFormField<MaterialModel>(
             initialValue: materialSelecionado,
-            decoration: _fieldDecoration('Selecione um item do inventario'),
+            isExpanded: true,
+            decoration: _fieldDecoration('Item do inventario'),
+            selectedItemBuilder: (context) => materiais
+                .map(
+                  (material) => Text(
+                    '${material.nome} - ${material.quantidade} ${material.metro ? 'm' : 'un'}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                )
+                .toList(),
             items: materiais
                 .map(
                   (material) => DropdownMenuItem(
                     value: material,
                     child: Text(
                       '${material.nome} - ${material.quantidade} ${material.metro ? 'm' : 'un'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 )

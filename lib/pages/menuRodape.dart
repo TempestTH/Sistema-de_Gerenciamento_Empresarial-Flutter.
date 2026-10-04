@@ -142,30 +142,35 @@ class _MenuRodapeState extends State<MenuRodape> {
             color: selecionado ? AppColors.surfaceAlt : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: ListTile(
-            leading: Icon(
-              icon,
-              color: selecionado
-                  ? AppColors.primary
-                  : isDrawer
-                  ? AppColors.secondary
-                  : AppColors.invertedText,
-            ),
-            title: Text(
-              title,
-              style: TextStyle(
+          child: Material(
+            color: Colors.transparent,
+            child: ListTile(
+              leading: Icon(
+                icon,
                 color: selecionado
                     ? AppColors.primary
                     : isDrawer
                     ? AppColors.secondary
                     : AppColors.invertedText,
-                fontWeight: selecionado ? FontWeight.w700 : FontWeight.normal,
               ),
+              title: Text(
+                title,
+                style: TextStyle(
+                  color: selecionado
+                      ? AppColors.primary
+                      : isDrawer
+                      ? AppColors.secondary
+                      : AppColors.invertedText,
+                  fontWeight: selecionado
+                      ? FontWeight.w700
+                      : FontWeight.normal,
+                ),
+              ),
+              onTap: () {
+                setState(() => _op = index);
+                if (isDrawer) Navigator.pop(context);
+              },
             ),
-            onTap: () {
-              setState(() => _op = index);
-              if (isDrawer) Navigator.pop(context);
-            },
           ),
         ),
       ),

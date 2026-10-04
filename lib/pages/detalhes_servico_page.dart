@@ -301,13 +301,9 @@ class _DetalhesServicoPageState extends State<DetalhesServicoPage> {
   }
 
   Future<void> _adicionarAnexoArquivo() async {
-    final selecionado = await FilePicker.pickFiles(
-      allowMultiple: false,
-      type: FileType.any,
-      withData: false,
-    );
+    final selecionados = await FilePicker.pickFiles(type: FileType.any);
 
-    final arquivo = selecionado?.files.single;
+    final arquivo = selecionados.isEmpty ? null : selecionados.single;
     if (arquivo == null) return;
 
     final anexo = AgendamentoAnexoModel(
@@ -909,19 +905,22 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    CheckboxListTile(
-                      value: usarMaterial,
-                      onChanged: (value) {
-                        setState(() {
-                          usarMaterial = value ?? false;
-                          if (!usarMaterial) {
-                            materialSelecionado = null;
-                            valorController.text = '0';
-                          }
-                        });
-                      },
-                      title: const Text('Este item e material do estoque'),
-                      controlAffinity: ListTileControlAffinity.leading,
+                    Material(
+                      color: Colors.transparent,
+                      child: CheckboxListTile(
+                        value: usarMaterial,
+                        onChanged: (value) {
+                          setState(() {
+                            usarMaterial = value ?? false;
+                            if (!usarMaterial) {
+                              materialSelecionado = null;
+                              valorController.text = '0';
+                            }
+                          });
+                        },
+                        title: const Text('Este item e material do estoque'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (usarMaterial) ...[
@@ -929,13 +928,25 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<MaterialModel>(
                         initialValue: materialSelecionado,
+                        isExpanded: true,
                         decoration: _fieldDecoration('Selecione o material'),
+                        selectedItemBuilder: (context) => widget.materiais
+                            .map(
+                              (material) => Text(
+                                '${material.nome} - ${_formatCurrency(material.valor)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                            .toList(),
                         items: widget.materiais
                             .map(
                               (material) => DropdownMenuItem(
                                 value: material,
                                 child: Text(
                                   '${material.nome} - ${_formatCurrency(material.valor)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             )

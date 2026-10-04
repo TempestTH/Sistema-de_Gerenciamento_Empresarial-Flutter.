@@ -326,15 +326,18 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
       ),
       child: Column(
         children: [
-          SwitchListTile(
-            value: possuiValidade,
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'Orcamento com validade',
-              style: TextStyle(fontWeight: FontWeight.w800),
+          Material(
+            color: Colors.transparent,
+            child: SwitchListTile(
+              value: possuiValidade,
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Orcamento com validade',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              onChanged: (value) => setState(() => possuiValidade = value),
             ),
-            onChanged: (value) => setState(() => possuiValidade = value),
           ),
           if (possuiValidade)
             OutlinedButton.icon(
@@ -629,17 +632,15 @@ class _OrcamentoPageState extends State<OrcamentoPage> {
   }
 
   Future<void> _selecionarImagem({required bool isHeader}) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.image,
-      withData: true,
-    );
-    if (result == null || result.files.single.bytes == null) return;
+    final result = await FilePicker.pickFile(type: FileType.image);
+    if (result == null) return;
 
-    final file = result.files.single;
+    final file = result;
+    final bytes = await file.readAsBytes();
     setState(() {
       layout = isHeader
-          ? layout.copyWith(cabecalho: file.bytes, cabecalhoNome: file.name)
-          : layout.copyWith(rodape: file.bytes, rodapeNome: file.name);
+          ? layout.copyWith(cabecalho: bytes, cabecalhoNome: file.name)
+          : layout.copyWith(rodape: bytes, rodapeNome: file.name);
     });
   }
 
@@ -1013,19 +1014,22 @@ class _ItemOrcamentoModalState extends State<_ItemOrcamentoModal> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    CheckboxListTile(
-                      value: usarMaterial,
-                      onChanged: (value) {
-                        setState(() {
-                          usarMaterial = value ?? false;
-                          if (!usarMaterial) {
-                            materialSelecionado = null;
-                            valorController.text = '0';
-                          }
-                        });
-                      },
-                      title: const Text('Este item e material do estoque'),
-                      controlAffinity: ListTileControlAffinity.leading,
+                    Material(
+                      color: Colors.transparent,
+                      child: CheckboxListTile(
+                        value: usarMaterial,
+                        onChanged: (value) {
+                          setState(() {
+                            usarMaterial = value ?? false;
+                            if (!usarMaterial) {
+                              materialSelecionado = null;
+                              valorController.text = '0';
+                            }
+                          });
+                        },
+                        title: const Text('Este item e material do estoque'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (usarMaterial) ...[
@@ -1033,13 +1037,24 @@ class _ItemOrcamentoModalState extends State<_ItemOrcamentoModal> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<MaterialModel>(
                         initialValue: materialSelecionado,
+                        isExpanded: true,
                         decoration: _decoration('Selecione o material'),
+                        selectedItemBuilder: (context) => widget.materiais
+                            .map(
+                              (material) => Text(
+                                '${material.nome} - ${_money(material.valor)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )
+                            .toList(),
                         items: widget.materiais
                             .map(
                               (material) => DropdownMenuItem(
                                 value: material,
                                 child: Text(
                                   '${material.nome} - ${_money(material.valor)}',
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
