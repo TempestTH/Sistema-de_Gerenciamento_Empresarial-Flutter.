@@ -10,6 +10,8 @@ import 'package:projeto_elifone/model/material_model.dart';
 import 'package:projeto_elifone/services/supabase_agendamento_service.dart';
 import 'package:projeto_elifone/services/supabase_estoque_service.dart';
 import 'package:projeto_elifone/services/supabase_material_service.dart';
+import 'package:projeto_elifone/widgets/responsive_dialog.dart';
+import 'package:projeto_elifone/widgets/material_search_field.dart';
 
 const List<String> _statusOptions = [
   'Agendado',
@@ -871,7 +873,7 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
     return Dialog(
       backgroundColor: Colors.transparent,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: responsiveDialogConstraints(context, maxWidth: 520),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -901,156 +903,142 @@ class _ItemServicoModalState extends State<_ItemServicoModal> {
                 ),
               ),
               const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: CheckboxListTile(
-                        value: usarMaterial,
-                        onChanged: (value) {
-                          setState(() {
-                            usarMaterial = value ?? false;
-                            if (!usarMaterial) {
-                              materialSelecionado = null;
-                              valorController.text = '0';
-                            }
-                          });
-                        },
-                        title: const Text('Este item e material do estoque'),
-                        controlAffinity: ListTileControlAffinity.leading,
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Material(
+                        color: Colors.transparent,
+                        child: CheckboxListTile(
+                          value: usarMaterial,
+                          onChanged: (value) {
+                            setState(() {
+                              usarMaterial = value ?? false;
+                              if (!usarMaterial) {
+                                materialSelecionado = null;
+                                valorController.text = '0';
+                              }
+                            });
+                          },
+                          title: const Text('Este item e material do estoque'),
+                          controlAffinity: ListTileControlAffinity.leading,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (usarMaterial) ...[
-                      _sectionLabel('Material do estoque'),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<MaterialModel>(
-                        initialValue: materialSelecionado,
-                        isExpanded: true,
-                        decoration: _fieldDecoration('Selecione o material'),
-                        selectedItemBuilder: (context) => widget.materiais
-                            .map(
-                              (material) => Text(
-                                '${material.nome} - ${_formatCurrency(material.valor)}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            )
-                            .toList(),
-                        items: widget.materiais
-                            .map(
-                              (material) => DropdownMenuItem(
-                                value: material,
-                                child: Text(
-                                  '${material.nome} - ${_formatCurrency(material.valor)}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            materialSelecionado = value;
-                          });
-                        },
-                      ),
-                      if (materialSelecionado != null) ...[
+                      const SizedBox(height: 12),
+                      if (usarMaterial) ...[
+                        _sectionLabel('Material do estoque'),
                         const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'Preco unitario: ${_formatCurrency(materialSelecionado!.valor)}',
-                            style: const TextStyle(
-                              color: AppColors.secondary,
-                              fontWeight: FontWeight.w800,
+                        MaterialSearchField(
+                          materiais: widget.materiais,
+                          selecionado: materialSelecionado,
+                          decoration: _fieldDecoration(
+                            'Pesquise e selecione o material',
+                          ),
+                          labelBuilder: (material) =>
+                              '${material.nome} - ${_formatCurrency(material.valor)}',
+                          onSelected: (value) {
+                            setState(() {
+                              materialSelecionado = value;
+                            });
+                          },
+                        ),
+                        if (materialSelecionado != null) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Preco unitario: ${_formatCurrency(materialSelecionado!.valor)}',
+                              style: const TextStyle(
+                                color: AppColors.secondary,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
+                        ],
+                      ] else ...[
+                        _sectionLabel('Descricao do item'),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: descricaoController,
+                          decoration: _fieldDecoration('Descricao'),
                         ),
                       ],
-                    ] else ...[
-                      _sectionLabel('Descricao do item'),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: descricaoController,
-                        decoration: _fieldDecoration('Descricao'),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final compacto = constraints.maxWidth < 420;
-                        final quantidadeField = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionLabel('Quantidade'),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: quantidadeController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: _fieldDecoration('Ex: 1'),
-                            ),
-                          ],
-                        );
-
-                        if (usarMaterial) return quantidadeField;
-
-                        final valorField = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionLabel('Valor unitario'),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: valorController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: _fieldDecoration('Ex: 85,00'),
-                            ),
-                          ],
-                        );
-
-                        if (compacto) {
-                          return Column(
+                      const SizedBox(height: 12),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final compacto = constraints.maxWidth < 420;
+                          final quantidadeField = Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              quantidadeField,
-                              const SizedBox(height: 12),
-                              valorField,
+                              _sectionLabel('Quantidade'),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: quantidadeController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                decoration: _fieldDecoration('Ex: 1'),
+                              ),
                             ],
                           );
-                        }
 
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: quantidadeField),
-                            const SizedBox(width: 10),
-                            Expanded(child: valorField),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                          if (usarMaterial) return quantidadeField;
+
+                          final valorField = Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _sectionLabel('Valor unitario'),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: valorController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                decoration: _fieldDecoration('Ex: 85,00'),
+                              ),
+                            ],
+                          );
+
+                          if (compacto) {
+                            return Column(
+                              children: [
+                                quantidadeField,
+                                const SizedBox(height: 12),
+                                valorField,
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: quantidadeField),
+                              const SizedBox(width: 10),
+                              Expanded(child: valorField),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: _secondaryButtonStyle(),
                       child: const Text('Cancelar'),
                     ),
-                    const SizedBox(width: 12),
                     FilledButton(
                       onPressed: salvar,
                       style: _primaryButtonStyle(),
@@ -1098,7 +1086,7 @@ class _Panel extends StatelessWidget {
                   ),
                 ),
               ),
-              if (action != null) action!,
+              ?action,
             ],
           ),
           const SizedBox(height: 16),

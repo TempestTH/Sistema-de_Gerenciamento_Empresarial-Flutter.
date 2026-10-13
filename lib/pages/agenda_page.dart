@@ -3,6 +3,7 @@ import 'package:projeto_elifone/theme/app_theme.dart';
 import 'package:projeto_elifone/model/agendamento_historico_model.dart';
 import 'package:projeto_elifone/model/agendamento_model.dart';
 import 'package:projeto_elifone/services/supabase_agendamento_service.dart';
+import 'package:projeto_elifone/widgets/responsive_dialog.dart';
 
 class AgendaPage extends StatefulWidget {
   final Future<List<AgendamentoModel>> Function()? loadAgendamentos;
@@ -951,10 +952,7 @@ class _NovoServicoModalState extends State<_NovoServicoModal> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(18),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 560,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+        constraints: responsiveDialogConstraints(context, maxWidth: 560),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.surface,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_elifone/theme/app_theme.dart';
+import 'package:projeto_elifone/widgets/responsive_dialog.dart';
 
 class ModalQuantidadeMaterial extends StatelessWidget {
   final List<dynamic> materiaisSelecionados;
@@ -53,10 +54,7 @@ class ModalQuantidadeMaterial extends StatelessWidget {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(18),
       child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 520,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+        constraints: responsiveDialogConstraints(context, maxWidth: 520),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -123,8 +121,10 @@ class ModalQuantidadeMaterial extends StatelessWidget {
               const Divider(height: 1, color: AppColors.border),
               Padding(
                 padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     OutlinedButton(
                       onPressed: carregando
@@ -133,7 +133,6 @@ class ModalQuantidadeMaterial extends StatelessWidget {
                       style: _modalSecondaryButtonStyle(),
                       child: const Text('Cancelar'),
                     ),
-                    const SizedBox(width: 12),
                     FilledButton(
                       onPressed: carregando ? null : onConfirmar,
                       style: _modalPrimaryButtonStyle(),

@@ -113,6 +113,7 @@ class OrcamentoLayoutModel {
 class OrcamentoModel {
   final int? id;
   final String codigo;
+  final String titulo;
   final String cliente;
   final DateTime dataEmissao;
   final bool possuiValidade;
@@ -125,6 +126,7 @@ class OrcamentoModel {
   const OrcamentoModel({
     this.id,
     required this.codigo,
+    this.titulo = '',
     required this.cliente,
     required this.dataEmissao,
     required this.possuiValidade,
@@ -150,6 +152,7 @@ class OrcamentoModel {
     return OrcamentoModel(
       id: _intFromJson(json['id']),
       codigo: json['codigo'] ?? '',
+      titulo: json['titulo'] ?? '',
       cliente: json['cliente'] ?? '',
       dataEmissao: DateTime.parse(
         json['data_emissao'] ?? json['created_at'] ?? DateTime.now().toString(),
@@ -170,6 +173,7 @@ class OrcamentoModel {
   Map<String, dynamic> toJson() {
     return {
       'codigo': codigo,
+      'titulo': titulo,
       'cliente': cliente,
       'data_emissao': _dateOnly(dataEmissao),
       'possui_validade': possuiValidade,

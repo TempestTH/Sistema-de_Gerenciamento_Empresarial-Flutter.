@@ -28,7 +28,9 @@ class _MenuRodapeState extends State<MenuRodape> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
+    final drawerWidth = (screenWidth * 0.82).clamp(240.0, 360.0).toDouble();
     final pages = [
       const MyHomePage(),
       AgendaPage(
@@ -65,7 +67,7 @@ class _MenuRodapeState extends State<MenuRodape> {
             ),
       drawer: isMobile
           ? Drawer(
-              width: MediaQuery.of(context).size.width * 0.7,
+              width: drawerWidth,
               child: _menuContent(isDrawer: true),
             )
           : null,

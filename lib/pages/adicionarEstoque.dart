@@ -4,6 +4,7 @@ import 'package:projeto_elifone/model/estoque_model.dart';
 import 'package:projeto_elifone/model/material_model.dart';
 import 'package:projeto_elifone/services/supabase_estoque_service.dart';
 import 'package:projeto_elifone/services/supabase_material_service.dart';
+import 'package:projeto_elifone/widgets/material_search_field.dart';
 
 class AdicionarEstoquePage extends StatefulWidget {
   final bool entradaInicial;
@@ -31,6 +32,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
   List<MaterialModel> materiais = [];
   List<dynamic> movimentacoes = [];
   MaterialModel? materialSelecionado;
+  MaterialModel? materialEdicaoSelecionado;
   String modo = 'inventario';
   bool medidoEmMetros = false;
   bool loading = true;
@@ -250,6 +252,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
                 _modoButton('entrada', 'Entrada', Icons.login),
                 _modoButton('saida', 'Saida', Icons.logout),
                 _modoButton('material', 'Novo Material', Icons.add),
+                _modoButton('editar', 'Editar Material', Icons.edit_outlined),
               ],
             ),
           ],
@@ -336,6 +339,7 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
       'entrada' => _buildMovimentacao(entrada: true),
       'saida' => _buildMovimentacao(entrada: false),
       'material' => _buildNovoMaterial(),
+      'editar' => _buildEditarMaterial(),
       _ => _buildInventario(),
     };
   }
@@ -475,6 +479,97 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
     );
   }
 
+  Widget _buildEditarMaterial() {
+    return _Painel(
+      title: 'Editar Material',
+      action: _formActions(
+        onConfirmar: salvarEdicaoMaterial,
+        confirmarLabel: 'Salvar Alteracoes',
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _label('Escolha o material'),
+          const SizedBox(height: 8),
+          MaterialSearchField(
+            materiais: materiais,
+            selecionado: materialEdicaoSelecionado,
+            decoration: _fieldDecoration('Pesquise e selecione o material'),
+            labelBuilder: (material) =>
+                '${material.nome} - ${_formatCurrency(material.valor)}',
+            onSelected: (material) {
+              setState(() {
+                materialEdicaoSelecionado = material;
+                nomeController.text = material.nome;
+                valorController.text = material.valor.toString();
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          _label('Nome do material'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: nomeController,
+            enabled: materialEdicaoSelecionado != null,
+            decoration: _fieldDecoration('Nome do material'),
+          ),
+          const SizedBox(height: 16),
+          _label('Valor unitario'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: valorController,
+            enabled: materialEdicaoSelecionado != null,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: _fieldDecoration('Ex: 85,00'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> salvarEdicaoMaterial() async {
+    final material = materialEdicaoSelecionado;
+    final nome = nomeController.text.trim();
+    final valor = num.tryParse(
+      valorController.text.trim().replaceAll(',', '.'),
+    );
+
+    if (material?.id == null) {
+      _mostrarMensagem('Selecione um material para editar.');
+      return;
+    }
+    if (nome.isEmpty || valor == null || valor < 0) {
+      _mostrarMensagem('Informe um nome e um valor valido.');
+      return;
+    }
+
+    setState(() => salvando = true);
+    try {
+      final atualizado = MaterialModel(
+        id: material!.id,
+        createdAt: material.createdAt,
+        nome: nome,
+        quantidade: material.quantidade,
+        valor: valor,
+        metro: material.metro,
+      );
+      await materialService.atualizar(atualizado, material.id!);
+      await carregarDados();
+      if (!mounted) return;
+      setState(() {
+        materialEdicaoSelecionado = null;
+        nomeController.clear();
+        valorController.clear();
+        modo = 'inventario';
+      });
+      _mostrarMensagem('Material atualizado com sucesso.');
+    } catch (_) {
+      _mostrarMensagem('Erro ao atualizar material.');
+    } finally {
+      if (mounted) setState(() => salvando = false);
+    }
+  }
+
   Widget _buildMovimentacao({required bool entrada}) {
     final titulo = entrada
         ? 'Registrar Entrada de Material'
@@ -492,32 +587,13 @@ class _AdicionarEstoquePageState extends State<AdicionarEstoquePage> {
         children: [
           _label('Selecionar material'),
           const SizedBox(height: 8),
-          DropdownButtonFormField<MaterialModel>(
-            initialValue: materialSelecionado,
-            isExpanded: true,
-            decoration: _fieldDecoration('Item do inventario'),
-            selectedItemBuilder: (context) => materiais
-                .map(
-                  (material) => Text(
-                    '${material.nome} - ${material.quantidade} ${material.metro ? 'm' : 'un'}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                )
-                .toList(),
-            items: materiais
-                .map(
-                  (material) => DropdownMenuItem(
-                    value: material,
-                    child: Text(
-                      '${material.nome} - ${material.quantidade} ${material.metro ? 'm' : 'un'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) => setState(() => materialSelecionado = value),
+          MaterialSearchField(
+            materiais: materiais,
+            selecionado: materialSelecionado,
+            decoration: _fieldDecoration('Pesquise e selecione o material'),
+            labelBuilder: (material) =>
+                '${material.nome} - ${material.quantidade} ${material.metro ? 'm' : 'un'}',
+            onSelected: (value) => setState(() => materialSelecionado = value),
           ),
           const SizedBox(height: 16),
           _label(entrada ? 'Quantidade adicionada' : 'Quantidade removida'),
@@ -820,7 +896,7 @@ class _Painel extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              if (action != null) action!,
+              ?action,
             ],
           ),
           const SizedBox(height: 16),
